@@ -88,7 +88,7 @@ Messages are HID++ long reports of 20 bytes: `0x11`, the device index, the featu
 
 What shapes the design:
 
-- **Input Monitoring.** Over Bluetooth, all of the mouse's HID collections, the pointer and the HID++ channel, share one device path. Opening the HID++ channel opens the whole device, which macOS allows only to an app with Input Monitoring. A plugin's permission is the Stream Deck app's, and granting it there would let every plugin read keystrokes system-wide, which isn't acceptable. Finding a way around it, such as a Bolt receiver whose HID++ channel may sit on a path of its own, or a small helper that holds the permission alone, comes before any action that opens the mouse.
+- **Input Monitoring.** Over Bluetooth, all of the mouse's HID collections, the pointer and the HID++ channel, share one device path. Opening the HID++ channel opens the whole device, which macOS allows only to an app with Input Monitoring. A plugin's permission is the Stream Deck app's, and granting it there would let every plugin read keystrokes system-wide, which isn't acceptable. Finding a way around it comes before any action that opens the mouse on macOS: [#3] holds the options, and where each one stands.
 - **One way from each computer.** Once a computer sends the mouse to another host, it can't call it back. A key sends the mouse to a given host: a toggle can't work. The mouse comes back with its own button, or from the other host.
 
 ## Testing on the hardware
@@ -112,3 +112,5 @@ What shapes the design:
 ## Style
 
 `docs/style_guide.md`, `.editorconfig`, `biome.json`, the Markdown lint configuration and CSpell (with the dictionaries in `.cspell/`) are the authority on style.
+
+[#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
