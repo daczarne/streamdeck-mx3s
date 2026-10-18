@@ -34,7 +34,7 @@ The plugin is made and checked on an MX Master 3S connected directly over Blueto
 
 - [Stream Deck][stream-deck] 7.1 or later, on macOS 12 or later, or Windows 10 or later. The plugin is made and checked on macOS, and isn't checked on Windows.
 - An MX Master 3S, connected to the computer.
-- On macOS, over Bluetooth, opening the mouse needs the Input Monitoring permission. Its pointer and its HID++ channel share one device, and macOS only lets an app with that permission open it. For a plugin, the permission would be the Stream Deck app's, and would let every plugin it runs read keystrokes system-wide, so the plugin won't ask for it. A way around it, such as a Bolt receiver or a small helper that holds the permission alone, is still to be found.
+- On macOS, over Bluetooth, opening the mouse needs the Input Monitoring permission. Its pointer and its HID++ channel share one device, and macOS only lets an app with that permission open it. For a plugin, the permission would be the Stream Deck app's, and would let every plugin it runs read keystrokes system-wide, so the plugin won't ask for it. A way around it is still to be found: [#3] holds the options, and where each one stands.
 - No Logitech software: neither Logi Options+ nor G HUB is needed.
 - Only to build it from the repository: Node.js and npm, at the exact Node version in `.node-version`. With [n][n], `n auto` installs and switches to it. The plugin itself runs on the Node 24 that Stream Deck downloads, so the Node used to build doesn't have to match it.
 
@@ -125,6 +125,7 @@ To update it, download `dist/sdpi-components.js` from the new upstream tag (not 
 
 The plugin is MIT licensed: see [`LICENSE`][license].
 
+[#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
 [check-ui]: scripts/check-ui.mjs
 [contributing]: docs/contributing.md
 [issues]: https://github.com/daczarne/streamdeck-mx3s/issues
