@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Name": "MX Master 3S",
+  "Version": "0.1.0.0",
+  "Author": "Daniel Czarnievicz",
+  "Actions": [
+    {
+      "Name": "Counter",
+      "UUID": "com.daczarne.mx3s.increment",
+      "Icon": "imgs/actions/counter/icon",
+      "Tooltip": "Displays a count, which increments by one on press.",
+      "PropertyInspectorPath": "ui/increment-counter.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/counter/key",
+          "TitleAlignment": "middle"
+        }
+      ]
+    }
+  ],
+  "Category": "MX Master 3S",
+  "CategoryIcon": "imgs/plugin/category-icon",
+  "CodePath": "bin/plugin.js",
+  "Description": "Switch a Logitech MX Master 3S between its Easy-Switch hosts from Stream Deck keys.",
+  "Icon": "imgs/plugin/marketplace",
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    },
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24"
+  },
+  "UUID": "com.daczarne.mx3s"
+}

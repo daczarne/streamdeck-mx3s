@@ -1,0 +1,39 @@
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - package.json
+          - package-lock.json
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - CLAUDE.md
+          - README.md
+          - SECURITY.md
+mx3s:
+  - changed-files:
+      - any-glob-to-any-file:
+          - com.daczarne.mx3s.sdPlugin/**
+          - rollup.config.mjs
+          - scripts/check-ui.mjs
+          - src/**
+tools:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .claude/**
+          - .cspell.json
+          - .cspell/**
+          - .editorconfig
+          - .gitattributes
+          - .gitignore
+          - .markdownlint-cli2.yaml
+          - .markdownlint.yaml
+          - .node-version
+          - .npmrc
+          - .vscode/**
+          - biome.json
+          - tsconfig.json
+workflows:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**

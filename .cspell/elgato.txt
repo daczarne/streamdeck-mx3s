@@ -1,0 +1,5 @@
+elgato
+imgs
+sdpi
+showlabels
+streamdeck

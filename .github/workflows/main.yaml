@@ -1,0 +1,138 @@
+name: Main
+
+on:
+  pull_request:
+    paths:
+      - "**/**"
+    types:
+      - opened
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - main
+    tags:
+      - "**/**"
+
+permissions: {}
+
+jobs:
+  label-pr:
+    name: Label PR
+    runs-on: ubuntu-latest
+    # A pull request from a fork gets a read-only token, with which labeling fails. It's skipped for those, which
+    # alls-green allows, rather than run with pull_request_target, which would give a fork's code write access.
+    if: ${{ github.event.pull_request && github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      labels: ${{ steps.pr_labeler.outputs.all-labels }}
+    steps:
+      - name: PR labeler 🏷
+        id: pr_labeler
+        uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yaml
+          sync-labels: true
+          dot: true
+      - name: Show labels 👀
+        id: show_labels
+        env:
+          ALL_LABELS: ${{ steps.pr_labeler.outputs.all-labels }}
+          NEW_LABELS: ${{ steps.pr_labeler.outputs.new-labels }}
+        run: |
+          echo "ALL_LABELS: ${{ env.ALL_LABELS }}"
+          echo "NEW_LABELS: ${{ env.NEW_LABELS }}"
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout 🛎️
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Lint Markdown files 🧪
+        id: lint_markdown_files
+        uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+        with:
+          config: .markdownlint.yaml
+          globs: .
+
+  spell-check:
+    name: Spell check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout 🛎️
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run spell checking 🧪
+        id: run_spell_checking
+        uses: streetsidesoftware/cspell-action@6f3c77c1406bc930f944ba97e9801a22e42caf58 # v9.1.0
+        with:
+          root: .
+          check_dot_files: true
+          inline: error
+          strict: true
+          config: .cspell.json
+          verbose: true
+          incremental_files_only: false
+
+  code:
+    name: Code checks
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - spell-check
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout 🛎️
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node 🟢
+        id: setup_node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install dependencies 📦
+        id: install_dependencies
+        run: npm ci --ignore-scripts
+      - name: Type check 🧪
+        id: type_check
+        run: npm run typecheck
+      - name: Lint and format check 🧪
+        id: lint_code
+        run: npm run lint
+      - name: Validate 🧪
+        id: validate
+        # Runs check:ui, the build and streamdeck validate.
+        run: npm run validate
+
+  alls-green:
+    name: Ensure all checks have passed
+    if: always()
+    runs-on: ubuntu-latest
+    needs:
+      - label-pr
+      - lint
+      - spell-check
+      - code
+    permissions: {}
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
+        with:
+          allowed-skips: label-pr
+          jobs: ${{ toJSON(needs) }}

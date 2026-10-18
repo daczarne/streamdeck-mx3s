@@ -1,0 +1,65 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": [
+    "**/.git/**",
+    "com.daczarne.mx3s.sdPlugin/bin/**",
+    "com.daczarne.mx3s.sdPlugin/logs/**",
+    "com.daczarne.mx3s.sdPlugin/**/vendor/**",
+    "node_modules/**",
+  ],
+  "ignoreWords": [ ],
+  "words": [
+    "czarnievicz",
+    "daczarne",
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "claude",
+      "path": "./.cspell/claude.txt",
+      "addWords": true,
+    },
+    {
+      "name": "elgato",
+      "path": "./.cspell/elgato.txt",
+      "addWords": true,
+    },
+    {
+      "name": "git_extras",
+      "path": "./.cspell/git_extras.txt",
+      "addWords": true,
+    },
+    {
+      "name": "lg",
+      "path": "./.cspell/lg.txt",
+      "addWords": true,
+    },
+    {
+      "name": "miscellaneous",
+      "path": "./.cspell/miscellaneous.txt",
+      "addWords": true,
+    },
+  ],
+  "dictionaries": [
+    "claude",
+    "elgato",
+    "git_extras",
+    "lg",
+    "miscellaneous",
+  ],
+  "overrides": [
+    {
+      "filename": "**/*.md",
+      "languageId": "markdown",
+    },
+    {
+      "filename": "**/*.sh",
+      "languageId": "shellscript",
+    },
+    {
+      "filename": "**/*.yaml",
+      "languageId": "yaml",
+    },
+  ],
+  "useGitignore": false,
+}

@@ -1,0 +1,22 @@
+{
+  "files.associations": {
+    "LICENSE": "txt",
+    "**/*.json": "jsonc",
+    // Claude Code skills are plain Markdown, not VS Code's own skill language, which flags Claude Code's attributes.
+    "**/SKILL.md": "markdown",
+  },
+  /* JSON schemas */
+  "json.schemas": [
+    {
+      "fileMatch": [ "**/manifest.json" ],
+      "url": "https://schemas.elgato.com/streamdeck/plugins/manifest.json"
+    },
+    {
+      "fileMatch": [ "**/layouts/*.json" ],
+      "url": "https://schemas.elgato.com/streamdeck/plugins/layout.json"
+    }
+  ],
+  /* Use the repo's pinned TypeScript, same as `npm run build` */
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+}
