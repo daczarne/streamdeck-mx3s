@@ -39,6 +39,7 @@ The repository was scaffolded with `streamdeck create`, and the rules below desc
 - `com.daczarne.mx3s.sdPlugin/` is the plugin folder: `manifest.json`, the settings pages in `ui/` (with the vendored `sdpi-components` in `ui/vendor/`), and the images in `imgs/`. `bin/`, the bundle Rollup writes, and `logs/`, are build and run output, and aren't committed.
 - `rollup.config.mjs` bundles `src/` into `bin/plugin.js`.
 - `scripts/check-ui.mjs` guards the settings pages (see [Supply chain](#supply-chain)). It's the Litra plugin's, pointed at this plugin folder, and changes to it are made in both.
+- `scripts/generate-icons.mjs` renders the plugin's icons from the glyphs of `@daczarne/streamdeck-icons` (`daczarne/streamdeck-icons`), as the Litra plugin's does: so far the category and marketplace icons, the MX Master 3S pack's mouse, filled. The action images in `imgs/` are still the template's. A change to a glyph is made there, then taken here by updating the commit the dependency is pinned to and regenerating the icons.
 - `docs/` holds the documents listed in [Read before changing things](#read-before-changing-things).
 
 ## Commands
@@ -49,9 +50,10 @@ npm ci --ignore-scripts   # install from the lockfile, without install scripts
 npm run build             # bundle src/ into the plugin folder
 npm run check:ui          # ui/*.html: no remote resources, CSP on every page; vendored file matches its hash
 npm run validate          # check:ui, build, streamdeck validate
+npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 npm run link              # link the plugin folder into Stream Deck
 npm run watch             # rebuild and restart the plugin on change
-npm run typecheck         # type-check the sources
+npm run typecheck         # type-check the sources, and the build and check scripts
 npm run lint              # Biome: lint rules, formatting and import order, without changing anything
 npm run format            # Biome: apply the formatting and the import order
 ```
@@ -61,7 +63,7 @@ npm run format            # Biome: apply the formatting and the import order
 - The plugin runs on Node 24, set by `Nodejs.Version` in `manifest.json`. Stream Deck downloads that runtime into `~/Library/Application Support/com.elgato.StreamDeck/NodeJS/`, whose `manifest.json` lists the exact version (24.13.1 when this was written). `tsconfig.json` extends `@tsconfig/node24`, and `@types/node` follows that runtime's minor version (24.13), not the Node used to build.
 - The Node used to build is pinned in `.node-version` (24.15.0), and `n auto` switches to it. `package.json` declares the same version in `engines`, and `engine-strict=true` in `.npmrc` makes `npm ci` refuse any other Node. CI reads `.node-version` too.
 - The repo pins TypeScript 6.0, which no longer loads `@types/*` automatically, hence `"types": ["node"]` in `tsconfig.json`. `.vscode/settings.json` points the editor at the repo's TypeScript, so the editor and the build check types with the same version.
-- `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`.
+- `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsconfig.scripts.json` extends it to check, as JavaScript, `rollup.config.mjs` and the scripts, `generate-icons.mjs` included, which takes the glyphs' types from the declarations `@daczarne/streamdeck-icons` ships. `tsconfig.json` doesn't allow JavaScript: Rollup's TypeScript plugin reads it, and would start processing JavaScript in the build. `npm run typecheck` runs both configs.
 - Biome lints and formats the TypeScript and JavaScript, from `biome.json`, with the same version and settings as the Litra plugin. Its config has to stay at the repository root: from anywhere else, its type-aware rules, such as `noFloatingPromises`, report nothing, without a warning.
 - `node-hid` ships native binaries, so when it arrives, Rollup keeps it external and the build copies the files of it that run next to the bundle, as the Litra plugin's `rollup.config.mjs` and `scripts/package-files.mjs` do.
 
@@ -72,7 +74,7 @@ Supply-chain risk is a hard requirement here:
 - No remote code. The settings pages load `sdpi-components` from `ui/vendor/`, pinned by hash in `scripts/check-ui.mjs`. The "Third-party code" section of `README.md` describes how to update it. Never install `sdpi-components` from npm: that package belongs to an unrelated maintainer.
 - Each settings page declares a Content-Security-Policy, which `scripts/check-ui.mjs` also holds and checks. It allows scripts only from the plugin folder and connections only to Stream Deck's WebSocket on `localhost`, so inline scripts are blocked: page logic goes in a `.js` file in `ui/`. The "Settings pages" section of `README.md` explains each directive. A change to the policy updates every page, the check and that section.
 - Install with `--ignore-scripts`, pin versions, and prefer local copies with recorded hashes. Flag any new dependency, remote resource or broad OS permission, and offer a narrower alternative.
-- npm packages and GitHub Actions are pinned to exact versions. Each upgrade is its own change: see the "Dependencies" section of `docs/contributing.md`.
+- npm packages and GitHub Actions are pinned to exact versions, and `@daczarne/streamdeck-icons` to a commit. Each upgrade is its own change: see the "Dependencies" section of `docs/contributing.md`.
 - No macOS permission is asked for on behalf of the Stream Deck app (see [How the mouse is reached](#how-the-mouse-is-reached)).
 
 ## How the mouse is reached
@@ -105,7 +107,7 @@ What shapes the design:
 
 - Create branches with `git switch -c`.
 - Commit messages explain the why and end with the `Co-Authored-By` trailer for Claude. Commit only when asked.
-- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome and `npm run validate` on every pull request and on `main`. Locally, `/lint` runs the same checks. The tests join both when they arrive.
+- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, and `npm run validate` on every pull request and on `main`. Locally, `/lint` runs the same checks. The tests join both when they arrive.
 - Write the pull request title and description with the `pr-description` skill.
 - Draft issues with the `github-issues` skill, and post them only when asked.
 

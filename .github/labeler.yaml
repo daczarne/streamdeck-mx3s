@@ -16,6 +16,7 @@ mx3s:
           - com.daczarne.mx3s.sdPlugin/**
           - rollup.config.mjs
           - scripts/check-ui.mjs
+          - scripts/generate-icons.mjs
           - src/**
 tools:
   - changed-files:
@@ -33,6 +34,7 @@ tools:
           - .vscode/**
           - biome.json
           - tsconfig.json
+          - tsconfig.scripts.json
 workflows:
   - changed-files:
       - any-glob-to-any-file:

@@ -10,6 +10,7 @@ Not an official Logitech or Elgato product.
 - [Setting up on a new computer](#setting-up-on-a-new-computer)
 - [Working on the plugin](#working-on-the-plugin)
 - [Settings pages](#settings-pages)
+- [Icons](#icons)
 - [Third-party code](#third-party-code)
 - [Credits](#credits)
 
@@ -76,11 +77,12 @@ Since the plugin is linked, a change takes effect as soon as it's built and the 
 npm run watch             # rebuild and restart the plugin on every change
 npm run build             # build once
 npx streamdeck restart com.daczarne.mx3s   # load the new build
-npm run typecheck         # type-check the sources
+npm run typecheck         # type-check the sources, and the build and check scripts
 npm run lint              # Biome: lint rules, formatting and import order, without changing anything
 npm run format            # Biome: apply the formatting and the import order
 npm run check:ui          # settings pages: no remote resources, CSP on every page, vendored file matches its hash
 npm run validate          # check:ui, build and streamdeck validate
+npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```
 
 The plugin's logs are in `com.daczarne.mx3s.sdPlugin/logs/`.
@@ -105,6 +107,12 @@ The policy allows only what the pages need:
 | `form-action 'none'`           | No form submissions.                                                                |
 
 Since inline scripts are blocked, a page's own logic goes in a `.js` file in `ui/`. The policy is repeated in each page and in [`scripts/check-ui.mjs`][check-ui], so a change to it updates all of them and the table above.
+
+## Icons
+
+The plugin's category icon, in the Stream Deck app's list of actions, and its marketplace icon, in its list of plugins, are drawn by code, from the glyphs of [`streamdeck-icons`][streamdeck-icons], a development dependency pinned to a commit. That repository also holds the palette, and the MX Master 3S icon pack, which adds keys for the mouse's hosts to Stream Deck's Icon Library. `scripts/generate-icons.mjs` decides which glyph goes where, and renders each to the PNG sizes Stream Deck needs. Both are the pack's mouse, filled: the category icon at the size of the pack's own icon, and the marketplace icon on a dark rounded tile, so it also shows on a light page. The action images are still the template's.
+
+To take a change to the glyphs, update the commit the dependency is pinned to, run `npm run icons`, and commit the regenerated images with it. CI regenerates them too, and fails when the committed images aren't what the script draws.
 
 ## Third-party code
 
@@ -137,5 +145,6 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [sdpi-source]: https://github.com/GeekyEggo/sdpi-components/blob/v4.0.1/dist/sdpi-components.js
 [solaar]: https://github.com/pwr-Solaar/Solaar
 [stream-deck]: https://www.elgato.com/streamdeck
+[streamdeck-icons]: https://github.com/daczarne/streamdeck-icons
 [streamdeck-litra]: https://github.com/daczarne/streamdeck-litra
 [style-guide]: docs/style_guide.md
