@@ -116,6 +116,14 @@ jobs:
       - name: Lint and format check 🧪
         id: lint_code
         run: npm run lint
+      - name: Check the icons match their code 🧪
+        id: check_icons
+        # Regenerates the plugin's icons, and fails if that changes anything in imgs/: the committed files must be what
+        # scripts/generate-icons.mjs draws from the pinned @daczarne/streamdeck-icons.
+        run: |
+          npm run icons
+          git status --porcelain -- com.daczarne.mx3s.sdPlugin/imgs
+          test -z "$(git status --porcelain -- com.daczarne.mx3s.sdPlugin/imgs)"
       - name: Validate 🧪
         id: validate
         # Runs check:ui, the build and streamdeck validate.
