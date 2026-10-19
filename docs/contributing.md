@@ -46,6 +46,7 @@ Every dependency is pinned, and every upgrade is a deliberate change of its own.
 - A dependency installed from GitHub is pinned to a full commit SHA instead of a version.
 - No remote code runs inside Stream Deck. A library the settings pages load is vendored into the plugin folder, with its hash recorded, rather than loaded from a CDN.
 - GitHub Actions are pinned to full commit SHAs, with the version as a trailing comment, checked against the release tag. Like npm packages, they're upgraded by hand.
+- CI's runners are pinned to an Ubuntu release (`ubuntu-24.04`), not `ubuntu-latest`, which GitHub moves to a new release on its own schedule. A release's image still gets GitHub's updates, but a new release can drop tools and change the default versions of others. Moving to a newer release is an upgrade of its own.
 
 ## Unused code
 
