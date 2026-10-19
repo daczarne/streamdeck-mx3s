@@ -22,11 +22,12 @@
   "scripts": {
     "build": "rollup -c",
     "check:ui": "node scripts/check-ui.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.daczarne.mx3s\"",
     "link": "streamdeck link com.daczarne.mx3s.sdPlugin",
     "unlink": "streamdeck unlink com.daczarne.mx3s",
     "validate": "npm run check:ui && npm run build && streamdeck validate com.daczarne.mx3s.sdPlugin",
-    "typecheck": "tsc --noEmit -p .",
+    "typecheck": "tsc --noEmit -p . && tsc -p tsconfig.scripts.json",
     "lint": "biome ci",
     "format": "biome check --write --linter-enabled=false"
   },
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@daczarne/streamdeck-icons": "github:daczarne/streamdeck-icons#47f885b74f2d16897822aa639d0a3fbbce910d65",
     "@elgato/cli": "1.10.2",
     "@rollup/plugin-commonjs": "29.0.3",
     "@rollup/plugin-node-resolve": "16.0.3",
@@ -44,6 +46,7 @@
     "@tsconfig/node24": "24.0.5",
     "@types/node": "24.13.6",
     "rollup": "4.64.9",
+    "sharp": "0.35.5",
     "tslib": "2.8.1",
     "typescript": "6.0.3"
   },
