@@ -3,6 +3,7 @@ anson
 bierner
 davidanson
 killall
+libvips
 osascript
 redhat
 rollup
