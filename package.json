@@ -51,6 +51,7 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@elgato/streamdeck": "3.0.2"
+    "@elgato/streamdeck": "3.0.2",
+    "node-hid": "3.3.0"
   }
 }
