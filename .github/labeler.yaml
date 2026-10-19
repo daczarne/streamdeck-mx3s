@@ -16,6 +16,7 @@ mx3s:
           - com.daczarne.mx3s.sdPlugin/**
           - rollup.config.mjs
           - scripts/check-ui.mjs
+          - scripts/probes/**
           - src/**
 tools:
   - changed-files:
