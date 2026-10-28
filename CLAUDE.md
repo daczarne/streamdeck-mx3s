@@ -45,7 +45,7 @@ The repository was scaffolded with `streamdeck create`, and the rules below desc
 ## Commands
 
 ```shell
-n auto                    # switch to the Node version in .node-version
+n auto                    # switch to the Node version in .node-version, and the npm that ships with it
 npm ci --ignore-scripts   # install from the lockfile, without install scripts
 npm run build             # bundle src/ into the plugin folder
 npm run check:ui          # ui/*.html: no remote resources, CSP on every page; vendored file matches its hash
@@ -61,7 +61,7 @@ npm run format            # Biome: apply the formatting and the import order
 ## Runtime and toolchain
 
 - The plugin runs on Node 24, set by `Nodejs.Version` in `manifest.json`. Stream Deck downloads that runtime into `~/Library/Application Support/com.elgato.StreamDeck/NodeJS/`, whose `manifest.json` lists the exact version (24.13.1 when this was written). `tsconfig.json` extends `@tsconfig/node24`, and `@types/node` follows that runtime's minor version (24.13), not the Node used to build.
-- The Node used to build is pinned in `.node-version` (24.15.0), and `n auto` switches to it. `package.json` declares the same version in `engines`, and `engine-strict=true` in `.npmrc` makes `npm ci` refuse any other Node. CI reads `.node-version` too.
+- The Node and the npm used to build are pinned in `devEngines` in `package.json` (24.22.1 and 11.19.1, the npm that ships with it), which makes npm refuse any other, to install or to run a script. Node's version is also in `.node-version`, which `n auto` switches to, with its npm, and which CI reads.
 - The repo pins TypeScript 6.0, which no longer loads `@types/*` automatically, hence `"types": ["node"]` in `tsconfig.json`. `.vscode/settings.json` points the editor at the repo's TypeScript, so the editor and the build check types with the same version.
 - `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsconfig.scripts.json` extends it to check, as JavaScript, `rollup.config.mjs` and the scripts, `generate-icons.mjs` included, which takes the glyphs' types from the declarations `@daczarne/streamdeck-icons` ships. `tsconfig.json` doesn't allow JavaScript: Rollup's TypeScript plugin reads it, and would start processing JavaScript in the build. `npm run typecheck` runs both configs.
 - Biome lints and formats the TypeScript and JavaScript, from `biome.json`, with the same version and settings as the Litra plugin. Its config has to stay at the repository root: from anywhere else, its type-aware rules, such as `noFloatingPromises`, report nothing, without a warning.
