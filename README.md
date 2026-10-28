@@ -37,7 +37,7 @@ The plugin is made and checked on an MX Master 3S connected directly over Blueto
 - An MX Master 3S, connected to the computer.
 - On macOS, over Bluetooth, opening the mouse needs the Input Monitoring permission. Its pointer and its HID++ channel share one device, and macOS only lets an app with that permission open it. For a plugin, the permission would be the Stream Deck app's, and would let every plugin it runs read keystrokes system-wide, so the plugin won't ask for it. A way around it is still to be found: [#3] holds the options, and where each one stands.
 - No Logitech software: neither Logi Options+ nor G HUB is needed.
-- Only to build it from the repository: Node.js and npm, at the exact Node version in `.node-version`. With [n][n], `n auto` installs and switches to it. The plugin itself runs on the Node 24 that Stream Deck downloads, so the Node used to build doesn't have to match it.
+- Only to build it from the repository: Node.js at the exact version in `.node-version`, with the npm that ships with it. `devEngines` in `package.json` pins both, and npm refuses any other. With [n][n], `n auto` installs that Node, with its npm, and switches to it. The plugin itself runs on the Node 24 that Stream Deck downloads, so the Node used to build doesn't have to match it.
 
 ## Setting up on a new computer
 
