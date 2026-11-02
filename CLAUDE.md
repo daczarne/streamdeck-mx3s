@@ -15,14 +15,15 @@
 
 A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Switch hosts (the 1, 2 and 3 on the mouse) by talking HID++ 2.0 to it directly, without Logi Options+ or G HUB. It follows the Litra plugin (`daczarne/streamdeck-litra`), which controls Logitech lights the same way, over `node-hid` and Logitech's vendor HID interface, and takes its structure, tooling and conventions from it.
 
-The plugin is made and checked on macOS, with a Stream Deck + XL running Stream Deck 7.6, and an MX Master 3S connected through a Logi Bolt receiver on each host. The manifest also lists Windows 10, where the plugin isn't checked, so a change shouldn't assume macOS without saying why. It needs neither Logi Options+ nor G HUB, and is checked without them installed.
+The plugin is made and checked on macOS, with a Stream Deck + XL running Stream Deck 7.6, and an MX Master 3S connected through a Logi Bolt receiver on each host. The manifest also lists Windows 10, where only releases are checked, as installed plugins, so a change shouldn't assume macOS without saying why. It needs neither Logi Options+ nor G HUB, and is checked without them installed.
 
-Its one action, Set Host, is a key that sends the mouse to the host it's set to. The plugin isn't released. Development runs linked from the repo, never installed, so the Deck runs whatever is built from the checked-out branch: a change takes effect on the next build and restart.
+Its one action, Set Host, is a key that sends the mouse to the host it's set to. Releases are installed from a file attached to each GitHub release, and each one is checked as an installed plugin on macOS and on Windows once it's published, with a patch release for what the checks find broken. Development runs linked from the repo, never installed, so the Deck runs whatever is built from the checked-out branch: a change takes effect on the next build and restart.
 
 ## Read before changing things
 
 - `docs/contributing.md`: how work is done here. Changes go through pull requests, features come with their tests, dependencies are pinned, and unused code is removed. This file only adds what is specific to Claude.
 - `docs/style_guide.md`: the conventions the linters don't enforce (see [Style](#style)).
+- `docs/releases.md`: how a release is made, from the branch that raises the version to the published release, and where the version is written.
 - `docs/manual_testing/`: the checks that only the Deck and the mouse can prove, one document per area. Before asking for a check on the Deck, point to the matching document. When a feature needs new manual checks, add them there.
 - The Litra plugin's `docs/elgato_sdk/`: what the Stream Deck SDK offers and what it doesn't, checked against Stream Deck 7.6, and its `docs/architecture.md`, on why it reaches its lamps through `node-hid` the way it does. Read them before designing how an action behaves on the Deck. What this plugin finds out that is specific to it goes into this repository's `docs/`.
 
@@ -32,7 +33,7 @@ Its one action, Set Host, is a key that sends the mouse to the host it's set to.
 - `src/mouse.ts` is the only module that talks to `node-hid`. It finds the mouse through the receivers plugged in, and sends it to a host, as described in [How the mouse is reached](#how-the-mouse-is-reached), one switch at a time. It logs what happened, and returns it rather than throwing. Every press opens the receivers afresh, and closes them before it returns.
 - `src/logging.ts` holds the logger every module logs through, instead of `streamDeck.logger`, and the Litra plugin's file target, which writes it to `logs/mx3s.log`, carried on across restarts and rotated by size.
 - Unit tests sit next to the file they test (`mouse.test.ts`), and run with Vitest. They need no receiver and create no `logs/` folder. `mouse.test.ts` runs `src/mouse.ts` against emulated receivers (`src/test-support/emulated-receiver.ts`), which answer as the probes measured them, through a fake `node-hid` (`fake-node-hid.ts`). The action's tests replace `src/mouse.ts`, `@elgato/streamdeck` and `src/logging.ts` with `vi.mock`, and drive the action through `src/test-support/fake-deck.ts`, which sends each event to the action it belongs to, as Stream Deck does.
-- `com.daczarne.mx3s.sdPlugin/` is the plugin folder: `manifest.json`, the settings pages in `ui/` (with the vendored `sdpi-components` in `ui/vendor/`), and the images in `imgs/`. `bin/` (the bundle, with its licenses), `node_modules/` (the native runtime) and `logs/` are build and run output, and aren't committed.
+- `com.daczarne.mx3s.sdPlugin/` is the plugin folder: `manifest.json`, the settings pages in `ui/` (with the vendored `sdpi-components` in `ui/vendor/`), and the images in `imgs/`. Its `.sdignore` lists what `npm run pack` leaves out of the package, besides the CLI's own defaults. `bin/` (the bundle, with its licenses), `node_modules/` (the native runtime) and `logs/` are build and run output, and aren't committed.
 - `rollup.config.mjs` bundles `src/` into `bin/plugin.js`. `scripts/package-files.mjs`, the Litra plugin's, decides what the build puts in the plugin folder besides the bundle: the files of `node-hid` that run, and the licenses of everything the plugin ships. Changes to it are made in both.
 - `scripts/check-ui.mjs` guards the settings pages (see [Supply chain](#supply-chain)). It's the Litra plugin's, pointed at this plugin folder, and changes to it are made in both. The scripts' tests sit next to them (`check-ui.test.ts`), and run each script with Node, as CI does, in a temporary folder that holds the files it checks (`src/test-support/script-folder.ts`).
 - `scripts/generate-icons.mjs` renders the plugin's icons from the glyphs of `@daczarne/streamdeck-icons` (`daczarne/streamdeck-icons`), as the Litra plugin's does: the MX Master 3S pack's mouse, filled for the category and marketplace icons and the key, centered on the key and small enough to leave room for its title, and outlined for the action's icon. The pack's host numbers are drawn from a font the package doesn't ship, so the key's title names its host instead. A change to a glyph is made there, then taken here by updating the commit the dependency is pinned to and regenerating the icons.
@@ -47,6 +48,7 @@ npm ci --ignore-scripts   # install from the lockfile, without install scripts
 npm run build             # bundle src/ into the plugin folder
 npm run check:ui          # ui/*.html: no remote resources, CSP on every page; vendored file matches its hash
 npm run validate          # check:ui, build, streamdeck validate
+npm run pack              # check:ui, build, write release/com.daczarne.mx3s.streamDeckPlugin
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 npm run link              # link the plugin folder into Stream Deck
 npm run watch             # rebuild and restart the plugin on change
@@ -63,7 +65,7 @@ npm test                  # run the unit tests
 - The repo pins TypeScript 6.0, which no longer loads `@types/*` automatically, hence `"types": ["node"]` in `tsconfig.json`. `.vscode/settings.json` points the editor at the repo's TypeScript, so the editor and the build check types with the same version.
 - `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsconfig.scripts.json` extends it to check, as JavaScript, `rollup.config.mjs`, the Vitest config and the scripts, `generate-icons.mjs` included, which takes the glyphs' types from the declarations `@daczarne/streamdeck-icons` ships, and with them the scripts' tests, which import the scripts they test. `tsconfig.json` doesn't allow JavaScript: Rollup's TypeScript plugin reads it, and would start processing JavaScript in the build. `npm run typecheck` runs both configs.
 - Biome lints and formats the TypeScript and JavaScript, from `biome.json`, with the same version and settings as the Litra plugin. Its config has to stay at the repository root: from anywhere else, its type-aware rules, such as `noFloatingPromises`, report nothing, without a warning.
-- `node-hid` ships native binaries, so Rollup keeps it external and `copyNativeRuntime` in `rollup.config.mjs` copies the files of it and of `pkg-prebuilds` that run on macOS and Windows into the plugin folder, from the list in `scripts/package-files.mjs`. The build stops when a listed file is missing. A linked plugin also finds the repo's top-level `node_modules`, so a package left off the list breaks only an installed plugin.
+- `node-hid` ships native binaries, so Rollup keeps it external and `copyNativeRuntime` in `rollup.config.mjs` copies the files of it and of `pkg-prebuilds` that run on macOS and Windows into the plugin folder, from the list in `scripts/package-files.mjs`. The build stops when a listed file is missing. A linked plugin also finds the repo's top-level `node_modules`, so a package left off the list breaks only an installed plugin, which the checks on every release catch.
 
 ## Supply chain
 
@@ -105,7 +107,7 @@ What shapes the design:
 
 - Create branches with `git switch -c`.
 - Commit messages explain the why and end with the `Co-Authored-By` trailer for Claude. Commit only when asked.
-- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`. Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the tests, and `/ci` runs both.
+- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`. On `main`, once every check has passed, its last job drafts a release when the version is new (see `docs/releases.md`). Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the tests, and `/ci` runs both.
 - Write the pull request title and description with the `pr-description` skill.
 - Draft issues with the `github-issues` skill, and post them only when asked.
 

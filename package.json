@@ -27,6 +27,7 @@
     "link": "streamdeck link com.daczarne.mx3s.sdPlugin",
     "unlink": "streamdeck unlink com.daczarne.mx3s",
     "validate": "npm run check:ui && npm run build && streamdeck validate com.daczarne.mx3s.sdPlugin",
+    "pack": "npm run check:ui && npm run build && streamdeck pack com.daczarne.mx3s.sdPlugin --force -o release",
     "typecheck": "tsc --noEmit -p . && tsc -p tsconfig.scripts.json",
     "lint": "biome ci",
     "format": "biome check --write --linter-enabled=false",
