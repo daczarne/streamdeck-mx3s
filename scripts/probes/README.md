@@ -55,7 +55,7 @@ A receiver that can't be opened prints `can't open the receiver:` with the reaso
 
 ## switch-host.mjs
 
-Sends the mouse to another Easy-Switch host, as the plugin's keys will. It looks through the receivers plugged in for the one the mouse answers through, finds the mouse's slot on it by its product ID, asks for the index of CHANGE_HOST and the mouse's hosts, checks the host against them, and sends `setCurrentHost`. The mouse leaves at once, so no reply comes, and the script ends there.
+Sends the mouse to another Easy-Switch host, as the plugin's Set Host key does. It looks through the receivers plugged in for the one the mouse answers through, finds the mouse's slot on it by its product ID, asks for the index of CHANGE_HOST and the mouse's hosts, checks the host against them, and sends `setCurrentHost`. The mouse leaves at once, so no reply comes, and the script ends there.
 
 ### Running it
 

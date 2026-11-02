@@ -17,7 +17,7 @@ Not an official Logitech or Elgato product.
 
 ## Status
 
-The plugin has one action, [Set Host](#the-set-host-key): a key that sends the mouse to one of its hosts. It talks to the mouse in-process over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights, through a Logi Bolt receiver, with no permission and no Logitech software.
+The plugin has one action, [Set Host](#the-set-host-key): a key that sends the mouse to one of its hosts. It talks to the mouse through a Logi Bolt receiver, with no permission and no Logitech software. It does so in-process, over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights.
 
 Once a computer sends the mouse to another host, it loses the mouse and can't call it back. A key can send the mouse to a host, but a key that toggles between two hosts can't work. The mouse comes back with its own button, or from the other host.
 
