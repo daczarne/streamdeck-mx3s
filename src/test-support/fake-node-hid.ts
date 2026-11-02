@@ -1,6 +1,6 @@
 import type { Device as HidDeviceInfo } from "node-hid";
 
-import type { EmulatedReceiver } from "./emulated-receiver";
+import type { EmulatedReceiver, ReceiverHandle } from "./emulated-receiver";
 
 /**
  * Stands in for `node-hid` in the tests of `src/mouse.ts`, which mock it with
@@ -11,8 +11,8 @@ import type { EmulatedReceiver } from "./emulated-receiver";
 /** A call made on a receiver's handle. */
 export type HidCall = "open" | "write" | "read" | "close";
 
-/** A call that went through, with the report written or read, if any. */
-export type HidEvent = { receiver: EmulatedReceiver; call: HidCall; report?: number[] };
+/** A call that went through, on the path it went through, with the report written or read, if any. */
+export type HidEvent = { receiver: EmulatedReceiver; path: string; call: HidCall; report?: number[] };
 
 // The receivers plugged in, in the order node-hid lists them.
 let connected: EmulatedReceiver[] = [];
@@ -46,24 +46,25 @@ export async function devicesAsync(): Promise<HidDeviceInfo[]> {
   return connected.flatMap((receiver) => receiver.info);
 }
 
-/** A handle on a receiver's HID++ channel, opened by its path, through which reports are written and read. */
+/** A handle on one of a receiver's HID++ channel's paths, through which reports are written and read. */
 export class HIDAsync {
   private closed = false;
 
-  /** A handle on a receiver, with the reports waiting to be read on it. */
+  /** A handle on a receiver's path. */
   private constructor(
     private readonly receiver: EmulatedReceiver,
-    private readonly input: number[][],
+    private readonly path: string,
+    private readonly handle: ReceiverHandle,
   ) {}
 
-  /** Opens the receiver at the path, which has to be plugged in. */
+  /** Opens the receiver's path, which has to be plugged in. */
   static async open(path: string): Promise<HIDAsync> {
-    const receiver = connected.find((candidate) => candidate.path === path);
+    const receiver = connected.find((candidate) => candidate.paths.includes(path));
     if (receiver === undefined) {
       throw new Error(`cannot open device with path ${path}`);
     }
-    const handle = new HIDAsync(receiver, receiver.open());
-    events.push({ receiver, call: "open" });
+    const handle = new HIDAsync(receiver, path, receiver.open(path));
+    events.push({ receiver, path, call: "open" });
     return handle;
   }
 
@@ -71,16 +72,16 @@ export class HIDAsync {
   async write(values: number[] | Buffer): Promise<number> {
     this.ensureOpen();
     const report = Array.from(values);
-    events.push({ receiver: this.receiver, call: "write", report });
-    this.receiver.receive(report);
+    this.receiver.receive(report, this.handle);
+    events.push({ receiver: this.receiver, path: this.path, call: "write", report });
     return report.length;
   }
 
   /** Reads the next report the receiver sent, or an empty buffer when there's none, as on a timeout. No time passes. */
   async read(_timeout?: number): Promise<Buffer> {
     this.ensureOpen();
-    const report = this.input.shift() ?? [];
-    events.push({ receiver: this.receiver, call: "read", report });
+    const report = this.handle.input.shift() ?? [];
+    events.push({ receiver: this.receiver, path: this.path, call: "read", report });
     return Buffer.from(report);
   }
 
@@ -88,8 +89,8 @@ export class HIDAsync {
   async close(): Promise<void> {
     this.ensureOpen();
     this.closed = true;
-    this.receiver.close(this.input);
-    events.push({ receiver: this.receiver, call: "close" });
+    this.receiver.close(this.handle);
+    events.push({ receiver: this.receiver, path: this.path, call: "close" });
   }
 
   /** Fails, like node-hid, when the handle is used after it was closed. */

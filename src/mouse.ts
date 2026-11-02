@@ -3,6 +3,10 @@
  * `node-hid`. HID++ 1.0 reads the receiver's own registers, to find the mouse's slot on it, and HID++ 2.0 reaches the
  * mouse, by that slot, through its CHANGE_HOST feature. `scripts/probes/hidpp.mjs` sends the same requests, by hand.
  * Every request waits for its own reply, and skips the notifications that arrive in between.
+ *
+ * On macOS, a receiver's HID++ channel is one device path, which carries both short and long reports. On Windows, it's
+ * two, one per report length, each a HID collection of its own: requests, which are short, go through the short one, and
+ * replies come on either, so the plugin opens both and reads from both.
  */
 import HID, { type HIDAsync } from "node-hid";
 
@@ -15,8 +19,9 @@ const BOLT_RECEIVER = 0xc548;
 const MX_MASTER_3S = 0xb034;
 
 // The receiver's HID++ channel, on a device path of its own, apart from its keyboard and mouse collections, so it opens
-// on macOS with no permission (#3).
+// on macOS with no permission (#3). It's listed once per report length: usage 1 for short reports, usage 2 for long.
 const HIDPP_USAGE_PAGE = 0xff00;
+const SHORT_REPORTS = 0x0001;
 
 // The device index of the receiver itself, the slots a receiver has, and the software ID the plugin's requests carry,
 // which their replies echo: any from 1 to 15, and the probes use 0x0a.
@@ -38,8 +43,20 @@ const CHANGE_HOST = 0x1814;
 // How long a request waits for its reply. A paired device that is on another channel may not answer at all.
 const TIMEOUT_MS = 1500;
 
+// How long a read waits on one handle before trying the other, on a channel that has two.
+const POLL_MS = 10;
+
+/** The device paths of a receiver's HID++ channel, every one replies come on, the one requests are written to first. */
+type ChannelPaths = string[];
+
+/** A receiver's HID++ channel, open: the handle requests are written to, and every handle replies are read from. */
+type Channel = { short: HIDAsync; handles: HIDAsync[] };
+
 /** The mouse, as reached through a receiver: its slot, and the index of CHANGE_HOST on it. */
-type Reached = { device: HIDAsync; slot: number; changeHost: number };
+type Reached = { channel: Channel; slot: number; changeHost: number };
+
+/** An error reply from the receiver or a device, as opposed to a request that failed or got no reply. */
+class HidppError extends Error {}
 
 /** What sending the mouse to a host came to. Only `ok` says the mouse is now on that host, or on its way. */
 export type SwitchResult =
@@ -63,27 +80,25 @@ export function switchHost(host: number): Promise<SwitchResult> {
 
 /** {@link switchHost}, once the switch before it has finished. */
 async function switchNow(host: number): Promise<SwitchResult> {
-  let paths: string[];
+  let receivers: ChannelPaths[];
   try {
-    paths = await receiverPaths();
+    receivers = await receiverChannels();
   } catch (error) {
     logger.error("Can't list the HID devices", error);
     return { ok: false, outcome: "failed" };
   }
-  if (paths.length === 0) {
+  if (receivers.length === 0) {
     logger.warn("No Logi Bolt receiver found");
     return { ok: false, outcome: "no-receiver" };
   }
-  for (const path of paths) {
-    let device: HIDAsync;
-    try {
-      device = await HID.HIDAsync.open(path);
-    } catch (error) {
-      logger.warn("Can't open a receiver's HID++ channel", error);
+  for (const paths of receivers) {
+    logger.info(`Opening a receiver's HID++ channel: ${paths.join(" and ")}`);
+    const channel = await open(paths);
+    if (channel === undefined) {
       continue;
     }
     try {
-      const mouse = await findMouse(device);
+      const mouse = await findMouse(channel);
       if (mouse !== undefined) {
         return await switchTo(mouse, host);
       }
@@ -91,19 +106,37 @@ async function switchNow(host: number): Promise<SwitchResult> {
       logger.error("A request to the receiver failed", error);
       return { ok: false, outcome: "failed" };
     } finally {
-      await close(device);
+      await closeAll(channel.handles);
     }
   }
-  logger.warn(`No receiver reaches the MX Master 3S, out of ${paths.length}`);
+  logger.warn(`No receiver reaches the MX Master 3S, out of ${receivers.length}`);
   return { ok: false, outcome: "unreachable" };
 }
 
-/** Closes a receiver's HID++ channel. A failure is only logged: the switch is done by then. */
-async function close(device: HIDAsync): Promise<void> {
+/** Opens every path of a receiver's HID++ channel, or none of them: a failure is logged, and closes what was opened. */
+async function open(paths: ChannelPaths): Promise<Channel | undefined> {
+  const handles: HIDAsync[] = [];
   try {
-    await device.close();
+    for (const path of paths) {
+      handles.push(await HID.HIDAsync.open(path));
+    }
   } catch (error) {
-    logger.warn("Can't close a receiver's HID++ channel", error);
+    logger.warn("Can't open a receiver's HID++ channel", error);
+    await closeAll(handles);
+    return undefined;
+  }
+  const [short] = handles;
+  return short === undefined ? undefined : { short, handles };
+}
+
+/** Closes a receiver's handles. A failure is only logged: the switch is done by then. */
+async function closeAll(handles: HIDAsync[]): Promise<void> {
+  for (const handle of handles) {
+    try {
+      await handle.close();
+    } catch (error) {
+      logger.warn("Can't close a receiver's HID++ channel", error);
+    }
   }
 }
 
@@ -119,33 +152,47 @@ async function switchTo(mouse: Reached, host: number): Promise<SwitchResult> {
     return { ok: true, outcome: "already-there" };
   }
   // setCurrentHost, function 1, takes the host counted from 0.
-  await mouse.device.write(featureReport(mouse.slot, mouse.changeHost, 1, [host - 1]));
+  await mouse.channel.short.write(featureReport(mouse.slot, mouse.changeHost, 1, [host - 1]));
   logger.info(`Sent the MX Master 3S from host ${current} to host ${host}`);
   return { ok: true, outcome: "switched", from: current };
 }
 
-/** The device paths of the HID++ channels of every Bolt receiver plugged in, one per receiver. */
-async function receiverPaths(): Promise<string[]> {
-  const paths = (await HID.devicesAsync())
-    .filter((d) => d.vendorId === LOGITECH && d.productId === BOLT_RECEIVER && d.usagePage === HIDPP_USAGE_PAGE)
-    .flatMap((d) => (d.path ? [d.path] : []));
-  // A receiver lists its HID++ channel twice, for short and long reports, on the same path.
-  return [...new Set(paths)];
+/**
+ * The HID++ channel of every Bolt receiver plugged in, one per receiver. A receiver lists its channel twice, once per
+ * report length: on the same path on macOS, and on two on Windows, which differ only in their collection, such as
+ * `&Col01` and `&Col02`, and in the last number of their instance, such as `&0000` and `&0001`.
+ */
+async function receiverChannels(): Promise<ChannelPaths[]> {
+  const receivers = new Map<string, { path: string; usage: number }[]>();
+  for (const d of await HID.devicesAsync()) {
+    if (d.vendorId !== LOGITECH || d.productId !== BOLT_RECEIVER || d.usagePage !== HIDPP_USAGE_PAGE || !d.path) {
+      continue;
+    }
+    const key = d.path.replace(/&col\d+(#.*&)\d+(#)/i, "$1$2");
+    receivers.set(key, [...(receivers.get(key) ?? []), { path: d.path, usage: d.usage ?? 0 }]);
+  }
+  // The path of short reports first, and each path once, since macOS lists the same one twice.
+  return [...receivers.values()].map((collections) => {
+    const shortFirst = [...collections].sort(
+      (a, b) => Number(b.usage === SHORT_REPORTS) - Number(a.usage === SHORT_REPORTS),
+    );
+    return [...new Set(shortFirst.map((c) => c.path))];
+  });
 }
 
 /**
  * The MX Master 3S on this receiver, if it answers: the first slot paired with one that tells the index of
  * CHANGE_HOST. A mouse paired with the receiver but on another channel doesn't answer, or answers with an error.
  */
-async function findMouse(device: HIDAsync): Promise<Reached | undefined> {
+async function findMouse(channel: Channel): Promise<Reached | undefined> {
   for (let slot = 1; slot <= SLOTS; slot++) {
-    if ((await productId(device, slot)) !== MX_MASTER_3S) {
+    if ((await productId(channel, slot)) !== MX_MASTER_3S) {
       continue;
     }
     try {
-      const changeHost = await featureIndex(device, slot, CHANGE_HOST);
+      const changeHost = await featureIndex(channel, slot, CHANGE_HOST);
       if (changeHost !== 0) {
-        return { device, slot, changeHost };
+        return { channel, slot, changeHost };
       }
     } catch {
       // On another channel, or off.
@@ -156,43 +203,47 @@ async function findMouse(device: HIDAsync): Promise<Reached | undefined> {
 
 /**
  * The product ID of the device paired in `slot`, from the receiver's pairing information, or undefined when the slot
- * is empty. The information holds the device's serial number too, which the plugin never reads.
+ * is empty. The information holds the device's serial number too, which the plugin never reads. A request that fails,
+ * or gets no reply, throws: the receiver itself always answers.
  */
-async function productId(device: HIDAsync, slot: number): Promise<number | undefined> {
+async function productId(channel: Channel, slot: number): Promise<number | undefined> {
   const register = PAIRING_INFO + slot;
   try {
     const reply = await request(
-      device,
+      channel,
       shortReport(RECEIVER, GET_LONG_REGISTER, RECEIVER_INFO, [register]),
       (r) => r[1] === RECEIVER && r[2] === GET_LONG_REGISTER && r[3] === RECEIVER_INFO && r[4] === register,
       (r) => r[1] === RECEIVER && r[2] === ERROR_1_0 && r[3] === GET_LONG_REGISTER && r[4] === RECEIVER_INFO,
     );
     // Low byte first, in bytes 2 and 3 of the information, which starts at byte 5 of the reply.
     return ((reply[7] ?? 0) << 8) + (reply[6] ?? 0);
-  } catch {
+  } catch (error) {
     // An empty slot answers with an error.
-    return undefined;
+    if (error instanceof HidppError) {
+      return undefined;
+    }
+    throw error;
   }
 }
 
 /** The index of feature `id` on the device in `slot`, from IRoot, or 0 when the device doesn't have it. */
-async function featureIndex(device: HIDAsync, slot: number, id: number): Promise<number> {
-  const reply = await callFeature(device, slot, ROOT, 0, [id >> 8, id & 0xff]);
+async function featureIndex(channel: Channel, slot: number, id: number): Promise<number> {
+  const reply = await callFeature(channel, slot, ROOT, 0, [id >> 8, id & 0xff]);
   return reply[4] ?? 0;
 }
 
 /** How many Easy-Switch hosts the mouse has, and which one it's on, counted from 1 as on the mouse. */
-async function hostInfo({ device, slot, changeHost }: Reached): Promise<{ count: number; current: number }> {
-  const reply = await callFeature(device, slot, changeHost, 0);
+async function hostInfo({ channel, slot, changeHost }: Reached): Promise<{ count: number; current: number }> {
+  const reply = await callFeature(channel, slot, changeHost, 0);
   return { count: reply[4] ?? 0, current: (reply[5] ?? 0) + 1 };
 }
 
 /** Calls function `fn` of the feature at `index` on the device in `slot`, with `params`, and returns its reply. */
-function callFeature(device: HIDAsync, slot: number, index: number, fn: number, params: number[] = []) {
+function callFeature(channel: Channel, slot: number, index: number, fn: number, params: number[] = []) {
   const report = featureReport(slot, index, fn, params);
   const fnId = report[3];
   return request(
-    device,
+    channel,
     report,
     (r) => r[1] === slot && r[2] === index && r[3] === fnId,
     (r) => r[1] === slot && ((r[2] === ERROR_2_0 && r[3] === index && r[4] === fnId) || r[2] === ERROR_1_0),
@@ -210,28 +261,36 @@ function shortReport(deviceIndex: number, first: number, second: number, params:
 }
 
 /**
- * Sends a report and waits for the reply `isReply` accepts. It throws on an error reply that `isError` accepts, and
- * when no reply comes in time. Any other report, such as a notification, is skipped.
+ * Sends a short report and waits for the reply `isReply` accepts, on any of the channel's handles. It throws a
+ * {@link HidppError} on an error reply that `isError` accepts, and an `Error` when no reply comes in time. Any other
+ * report, such as a notification, is skipped.
  */
 async function request(
-  device: HIDAsync,
+  channel: Channel,
   report: number[],
   isReply: (reply: number[]) => boolean,
   isError: (reply: number[]) => boolean,
 ): Promise<number[]> {
-  await device.write(report);
+  await channel.short.write(report);
   const deadline = Date.now() + TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    // A read that times out gives an empty buffer.
-    const reply = [...((await device.read(Math.max(1, deadline - Date.now()))) ?? [])];
-    if (reply.length === 0) {
-      break;
-    }
-    if (isReply(reply)) {
-      return reply;
-    }
-    if (isError(reply)) {
-      throw new Error(`HID++ error ${hex(reply)} for ${hex(report)}`);
+  // The time left to wait, counted from the reads that timed out, so that a read that returns at once, as a fake
+  // handle's does, still runs it out.
+  let waiting = TIMEOUT_MS;
+  while (waiting > 0 && Date.now() < deadline) {
+    for (const handle of channel.handles) {
+      // A single handle waits for the whole time left, and two take turns. A read that times out gives an empty buffer.
+      const timeout = channel.handles.length === 1 ? waiting : Math.min(POLL_MS, waiting);
+      const reply = [...((await handle.read(Math.max(1, timeout))) ?? [])];
+      if (reply.length === 0) {
+        waiting -= timeout;
+        continue;
+      }
+      if (isReply(reply)) {
+        return reply;
+      }
+      if (isError(reply)) {
+        throw new HidppError(`HID++ error ${hex(reply)} for ${hex(report)}`);
+      }
     }
   }
   throw new Error(`No reply to ${hex(report)}`);
