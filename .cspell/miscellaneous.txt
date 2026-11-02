@@ -4,8 +4,12 @@ bierner
 davidanson
 killall
 libvips
+licence
+nodehid
 osascript
+prebuilds
 redhat
 rollup
 Srvs
+vitest
 yzhang

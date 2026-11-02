@@ -6,7 +6,13 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["src/**/*.ts", "scripts/**/*.mjs", "*.mjs", "com.daczarne.mx3s.sdPlugin/ui/*.js"]
+    "includes": [
+      "src/**/*.ts",
+      "scripts/**/*.mjs",
+      "scripts/**/*.test.ts",
+      "*.mjs",
+      "com.daczarne.mx3s.sdPlugin/ui/*.js"
+    ]
   },
   "formatter": {
     "enabled": true,

@@ -7,8 +7,11 @@
   },
   "include": [
     "rollup.config.mjs",
+    "vitest.config.mjs",
     "scripts/check-ui.mjs",
     "scripts/generate-icons.mjs",
-    "scripts/probes/*.mjs"
+    "scripts/package-files.mjs",
+    "scripts/probes/*.mjs",
+    "scripts/**/*.test.ts"
   ]
 }

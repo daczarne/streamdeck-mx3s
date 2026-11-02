@@ -8,6 +8,7 @@ Not an official Logitech or Elgato product.
 - [Supported hardware](#supported-hardware)
 - [Requirements](#requirements)
 - [Setting up on a new computer](#setting-up-on-a-new-computer)
+- [The Set Host key](#the-set-host-key)
 - [Working on the plugin](#working-on-the-plugin)
 - [Settings pages](#settings-pages)
 - [Icons](#icons)
@@ -16,9 +17,7 @@ Not an official Logitech or Elgato product.
 
 ## Status
 
-The plugin is at its start, and has no actions yet: the Counter action it shows is the sample from Elgato's template. The first action will be a key that sends the mouse to a given host.
-
-The plugin will talk to the mouse in-process over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights. A proof of concept, run by hand, has read the mouse's current host and switched it, through a Logi Bolt receiver, with no permission and no Logitech software.
+The plugin has one action, [Set Host](#the-set-host-key): a key that sends the mouse to one of its hosts. It talks to the mouse through a Logi Bolt receiver, with no permission and no Logitech software. It does so in-process, over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights.
 
 Once a computer sends the mouse to another host, it loses the mouse and can't call it back. A key can send the mouse to a host, but a key that toggles between two hosts can't work. The mouse comes back with its own button, or from the other host.
 
@@ -26,7 +25,7 @@ Once a computer sends the mouse to another host, it loses the mouse and can't ca
 
 | Mouse        | Connection         | Switching hosts                        |
 |--------------|--------------------|----------------------------------------|
-| MX Master 3S | Logi Bolt receiver | Checked by hand, not yet in the plugin |
+| MX Master 3S | Logi Bolt receiver | Supported, with the Set Host key       |
 | MX Master 3S | Bluetooth          | Not supported                          |
 
 The plugin reaches the mouse through a Logi Bolt receiver on each computer, paired with the mouse on that computer's Easy-Switch channel. Over Bluetooth, opening the mouse on macOS needs a permission the plugin doesn't ask for (see [Requirements](#requirements)). Other Logitech mice with Easy-Switch and Bolt support the same HID++ feature, but the plugin isn't checked on any of them. If you try one, [an issue][issues] saying how it went helps.
@@ -41,7 +40,7 @@ The plugin reaches the mouse through a Logi Bolt receiver on each computer, pair
 
 ## Setting up on a new computer
 
-1. Install Stream Deck, connect the Deck, and pair the mouse.
+1. Install Stream Deck, connect the Deck, and plug in the computer's receiver, paired with the mouse (see [Requirements](#requirements)).
 2. Clone the repository, switch to the Node version in `.node-version`, and install the dependencies from the lockfile, without running install scripts:
 
     ```shell
@@ -67,6 +66,14 @@ The plugin reaches the mouse through a Logi Bolt receiver on each computer, pair
 
 Developer mode stays on afterwards.
 
+## The Set Host key
+
+The Set Host key sends the mouse to the host it's set to, chosen on its settings page, from 1 to 3, as numbered on the mouse. The key shows the mouse, and its host as its title, such as `Host 2`, until it's given a title of its own. The MX Master 3S icon pack in [`streamdeck-icons`][streamdeck-icons] has images for the hosts' keys, with each host's number on the mouse.
+
+On a press, the key shows a check mark once the mouse is on its way, or already on that host, and an alert when no receiver on this computer reaches the mouse, such as when it's on another host already. The plugin's log says why (see [Working on the plugin](#working-on-the-plugin)).
+
+A key on each computer for each of the other hosts lets the mouse be sent from any of them to any other.
+
 ## Working on the plugin
 
 [The contributing guide][contributing] describes how changes are made, and [the style guide][style-guide] the conventions the linters don't enforce.
@@ -80,12 +87,13 @@ npx streamdeck restart com.daczarne.mx3s   # load the new build
 npm run typecheck         # type-check the sources, and the build and check scripts
 npm run lint              # Biome: lint rules, formatting and import order, without changing anything
 npm run format            # Biome: apply the formatting and the import order
+npm test                  # run the unit tests
 npm run check:ui          # settings pages: no remote resources, CSP on every page, vendored file matches its hash
 npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```
 
-The plugin's logs are in `com.daczarne.mx3s.sdPlugin/logs/`.
+The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each press of a key and what came of it. It carries on across restarts, and is rotated once it reaches 1 MB, keeping four older files.
 
 ## Settings pages
 
@@ -110,7 +118,7 @@ Since inline scripts are blocked, a page's own logic goes in a `.js` file in `ui
 
 ## Icons
 
-The plugin's category icon, in the Stream Deck app's list of actions, and its marketplace icon, in its list of plugins, are drawn by code, from the glyphs of [`streamdeck-icons`][streamdeck-icons], a development dependency pinned to a commit. That repository also holds the palette, and the MX Master 3S icon pack, which adds keys for the mouse's hosts to Stream Deck's Icon Library. `scripts/generate-icons.mjs` decides which glyph goes where, and renders each to the PNG sizes Stream Deck needs. Both are the pack's mouse, filled: the category icon at the size of the pack's own icon, and the marketplace icon on a dark rounded tile, so it also shows on a light page. The action images are still the template's.
+The plugin's images, its category icon in the Stream Deck app's list of actions, its marketplace icon in its list of plugins, and the Set Host action's icon and key image, are drawn by code, from the glyphs of [`streamdeck-icons`][streamdeck-icons], a development dependency pinned to a commit. That repository also holds the palette, and the MX Master 3S icon pack, which adds keys for the mouse's hosts to Stream Deck's Icon Library. `scripts/generate-icons.mjs` decides which glyph goes where, and renders each to the PNG sizes Stream Deck needs. They're the pack's mouse, filled: the category icon at the size of the pack's own icon, the marketplace icon on a dark rounded tile, so it also shows on a light page, and the Set Host key's image smaller, centered, to leave room for its title under it. The action's icon, in the list of actions, is the mouse outlined.
 
 To take a change to the glyphs, update the commit the dependency is pinned to, run `npm run icons`, and commit the regenerated images with it. CI regenerates them too, and fails when the committed images aren't what the script draws.
 
