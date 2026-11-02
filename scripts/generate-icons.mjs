@@ -17,10 +17,12 @@ const MOUSE_SPAN = MOUSE.bottom - MOUSE.top;
 
 /**
  * How much of each icon's height the mouse covers. In the category icon, as much as in the MX Master 3S icon pack's
- * own icon, as `scripts/packs/mx3s.mjs` of `@daczarne/streamdeck-icons` sizes it. In the marketplace icon, less, to
- * leave a margin inside its tile, about as much as the lamp leaves in the Litra plugin's.
+ * own icon, as `scripts/packs/mx3s.mjs` of `@daczarne/streamdeck-icons` sizes it, and about as much in the action's
+ * icon in the same list. In the marketplace icon, less, to leave a margin inside its tile, about as much as the lamp
+ * leaves in the Litra plugin's. On the key, less again, so that the title, which Stream Deck draws over the image at
+ * the bottom, clears the mouse centered above it.
  */
-const ICON_SPANS = { category: 0.86, marketplace: 0.7 };
+const ICON_SPANS = { category: 0.86, action: 0.9, marketplace: 0.7, key: 0.44 };
 
 /** The corner radius of the marketplace icon's tile, as a share of its side, as the Litra plugin's has. */
 const TILE_RADIUS = 0.18;
@@ -55,17 +57,19 @@ async function writePair(basePathNoExt, svgAt1x, size1x) {
 }
 
 /**
- * The filled mouse, scaled about the center to cover `span` of its canvas's height.
+ * The mouse, filled unless `outlined`, scaled about the center to cover `span` of its canvas's height.
  *
  * @param {number} size the side of its square canvas
  * @param {number} span
- * @param {string} [color] the glyph's default when left out
+ * @param {{ color?: string, outlined?: boolean }} [options] the glyph's default color when left out
  * @returns {string} its SVG markup
  */
-function filledMouse(size, span, color) {
+function placedMouse(size, span, { color, outlined = false } = {}) {
   const c = size / 2;
-  const glyph = color === undefined ? mouseGlyph(size, { filled: true }) : mouseGlyph(size, { filled: true, color });
-  return `<g transform="translate(${c} ${c}) scale(${span / MOUSE_SPAN}) translate(${-c} ${-c})">${glyph}</g>`;
+  const filled = !outlined;
+  const glyph = color === undefined ? mouseGlyph(size, { filled }) : mouseGlyph(size, { filled, color });
+  return `<g transform="translate(${c} ${c}) scale(${span / MOUSE_SPAN}) translate(${-c} ${-c})">
+    ${glyph}</g>`;
 }
 
 /**
@@ -75,7 +79,29 @@ function filledMouse(size, span, color) {
  * @returns {string} its SVG markup
  */
 function categoryIcon(size) {
-  return filledMouse(size, ICON_SPANS.category);
+  return placedMouse(size, ICON_SPANS.category);
+}
+
+/**
+ * The Set Host action's icon, in the Stream Deck app's list of actions: the outlined mouse, white on transparent, as
+ * line art like the app's own action icons, and apart from the category icon above it.
+ *
+ * @param {number} size the side of its square canvas
+ * @returns {string} its SVG markup
+ */
+function actionIcon(size) {
+  return placedMouse(size, ICON_SPANS.action, { outlined: true });
+}
+
+/**
+ * The Set Host key's image: the filled mouse, white on transparent, centered, and small enough to leave room for the
+ * title, which names the key's host.
+ *
+ * @param {number} size the side of its square canvas
+ * @returns {string} its SVG markup
+ */
+function keyImage(size) {
+  return placedMouse(size, ICON_SPANS.key);
 }
 
 /**
@@ -87,7 +113,7 @@ function categoryIcon(size) {
  */
 function marketplaceIcon(size) {
   return `<rect width="${size}" height="${size}" rx="${size * TILE_RADIUS}" fill="${INK}"/>
-    ${filledMouse(size, ICON_SPANS.marketplace, WHITE)}`;
+    ${placedMouse(size, ICON_SPANS.marketplace, { color: WHITE })}`;
 }
 
 /**
@@ -101,6 +127,12 @@ async function main() {
 
   // Marketplace (256 / 512): the plugin's icon in the Stream Deck app's list of plugins
   await writePair(path.join(root, "plugin/marketplace"), marketplaceIcon, 256);
+
+  // Action (20 / 40): the action's icon in the Stream Deck app's list of actions
+  await writePair(path.join(root, "actions/set-host/icon"), actionIcon, 20);
+
+  // Key (72 / 144): the image of a key the action is placed on
+  await writePair(path.join(root, "actions/set-host/key"), keyImage, 72);
 
   console.log("Icons generated.");
 }

@@ -124,6 +124,9 @@ jobs:
           npm run icons
           git status --porcelain -- com.daczarne.mx3s.sdPlugin/imgs
           test -z "$(git status --porcelain -- com.daczarne.mx3s.sdPlugin/imgs)"
+      - name: Test 🧪
+        id: test
+        run: npm test
       - name: Validate 🧪
         id: validate
         # Runs check:ui, the build and streamdeck validate.

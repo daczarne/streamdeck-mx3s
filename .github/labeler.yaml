@@ -11,14 +11,26 @@ docs:
           - README.md
           - SECURITY.md
 mx3s:
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - com.daczarne.mx3s.sdPlugin/**
+              - rollup.config.mjs
+              - scripts/check-ui.mjs
+              - scripts/generate-icons.mjs
+              - scripts/package-files.mjs
+              - scripts/probes/**
+          - all-globs-to-any-file:
+              - src/**
+              - "!src/**/*.test.ts"
+              - "!src/test-support/**"
+tests:
   - changed-files:
       - any-glob-to-any-file:
-          - com.daczarne.mx3s.sdPlugin/**
-          - rollup.config.mjs
-          - scripts/check-ui.mjs
-          - scripts/generate-icons.mjs
-          - scripts/probes/**
-          - src/**
+          - scripts/*.test.ts
+          - src/**/*.test.ts
+          - src/test-support/**
+          - vitest.config.mjs
 tools:
   - changed-files:
       - any-glob-to-any-file:

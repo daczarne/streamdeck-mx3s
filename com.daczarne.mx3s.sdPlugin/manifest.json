@@ -5,18 +5,21 @@
   "Author": "Daniel Czarnievicz",
   "Actions": [
     {
-      "Name": "Counter",
-      "UUID": "com.daczarne.mx3s.increment",
-      "Icon": "imgs/actions/counter/icon",
-      "Tooltip": "Displays a count, which increments by one on press.",
-      "PropertyInspectorPath": "ui/increment-counter.html",
+      "Name": "Set Host",
+      "UUID": "com.daczarne.mx3s.set-host",
+      "Icon": "imgs/actions/set-host/icon",
+      "Tooltip": "Sends the mouse to one of its Easy-Switch hosts.",
+      "PropertyInspectorPath": "ui/set-host.html",
       "Controllers": [
         "Keypad"
       ],
       "States": [
         {
-          "Image": "imgs/actions/counter/key",
-          "TitleAlignment": "middle"
+          "Image": "imgs/actions/set-host/key",
+          "ShowTitle": true,
+          "TitleAlignment": "bottom",
+          "FontSize": 14,
+          "TitleColor": "#ffffff"
         }
       ]
     }

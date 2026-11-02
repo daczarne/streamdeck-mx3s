@@ -31,7 +31,7 @@ Commit messages on a branch disappear in the squash. They stay short and accurat
 
 ## Features ship with tests
 
-Every new feature or enhancement comes with automated tests for it, in the same pull request. Otherwise the branch that adds the feature can also add its bugs, typically in edge cases nobody tested. The first feature that needs tests brings the test setup with it. The issue isn't done until the tests are in.
+Every new feature or enhancement comes with automated tests for it, in the same pull request. Otherwise the branch that adds the feature can also add its bugs, typically in edge cases nobody tested. The issue isn't done until the tests are in.
 
 - A unit test covers one module, with the modules it builds on faked, or the mouse emulated for the code that talks to it: its logic and its edge cases, such as invalid settings, logs and each kind of failure. An integration test covers what crosses modules: that what one module reports or sends reaches the next as that one expects.
 - What can't be automated, such as Stream Deck's own behavior or what the mouse does, is checked by hand on the Deck. Those checks are written down in `docs/manual_testing/`, one document per area, with when to run them and what each one should show, so that anyone can repeat them without remembering how. A feature that needs new manual checks adds them there, in the same pull request.

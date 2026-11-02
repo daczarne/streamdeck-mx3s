@@ -2,7 +2,6 @@
 
 - [Project](#project)
 - [Read before changing things](#read-before-changing-things)
-- [Where the repository starts](#where-the-repository-starts)
 - [Layout](#layout)
 - [Commands](#commands)
 - [Runtime and toolchain](#runtime-and-toolchain)
@@ -18,29 +17,26 @@ A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Swit
 
 The plugin is made and checked on macOS, with a Stream Deck + XL running Stream Deck 7.6, and an MX Master 3S connected through a Logi Bolt receiver on each host. The manifest also lists Windows 10, where the plugin isn't checked, so a change shouldn't assume macOS without saying why. It needs neither Logi Options+ nor G HUB, and is checked without them installed.
 
-The plugin isn't released. Development runs linked from the repo, never installed, so the Deck runs whatever is built from the checked-out branch: a change takes effect on the next build and restart.
+Its one action, Set Host, is a key that sends the mouse to the host it's set to. The plugin isn't released. Development runs linked from the repo, never installed, so the Deck runs whatever is built from the checked-out branch: a change takes effect on the next build and restart.
 
 ## Read before changing things
 
 - `docs/contributing.md`: how work is done here. Changes go through pull requests, features come with their tests, dependencies are pinned, and unused code is removed. This file only adds what is specific to Claude.
 - `docs/style_guide.md`: the conventions the linters don't enforce (see [Style](#style)).
+- `docs/manual_testing/`: the checks that only the Deck and the mouse can prove, one document per area. Before asking for a check on the Deck, point to the matching document. When a feature needs new manual checks, add them there.
 - The Litra plugin's `docs/elgato_sdk/`: what the Stream Deck SDK offers and what it doesn't, checked against Stream Deck 7.6, and its `docs/architecture.md`, on why it reaches its lamps through `node-hid` the way it does. Read them before designing how an action behaves on the Deck. What this plugin finds out that is specific to it goes into this repository's `docs/`.
-
-## Where the repository starts
-
-The repository was scaffolded with `streamdeck create`, and the rules below describe where it is going, not every file in it yet. What the template left behind is removed as the plugin takes shape, never copied into new code:
-
-- The Counter action (`src/actions/increment-counter.ts`, its images in `imgs/actions/counter/` and its settings page `ui/increment-counter.html`) is the template's sample, and goes when the first real action arrives. So do the template's comments in `src/plugin.ts`, and its `trace` log level, which logs every message between Stream Deck and the plugin.
-- There are no tests yet. The first feature that needs them brings Vitest and the test setup, following the Litra plugin's, along with the tests of `scripts/check-ui.mjs` that the Litra plugin has.
 
 ## Layout
 
-- `src/plugin.ts` registers the actions, and `src/actions/` holds them.
-- `com.daczarne.mx3s.sdPlugin/` is the plugin folder: `manifest.json`, the settings pages in `ui/` (with the vendored `sdpi-components` in `ui/vendor/`), and the images in `imgs/`. `bin/`, the bundle Rollup writes, and `logs/`, are build and run output, and aren't committed.
-- `rollup.config.mjs` bundles `src/` into `bin/plugin.js`.
-- `scripts/check-ui.mjs` guards the settings pages (see [Supply chain](#supply-chain)). It's the Litra plugin's, pointed at this plugin folder, and changes to it are made in both.
-- `scripts/generate-icons.mjs` renders the plugin's icons from the glyphs of `@daczarne/streamdeck-icons` (`daczarne/streamdeck-icons`), as the Litra plugin's does: so far the category and marketplace icons, the MX Master 3S pack's mouse, filled. The action images in `imgs/` are still the template's. A change to a glyph is made there, then taken here by updating the commit the dependency is pinned to and regenerating the icons.
-- `scripts/probes/` holds scripts that talk to the mouse through Bolt receivers, run by hand: reading what the plugin needs, switching the host, and pairing a receiver without Logitech's software. Its README describes how to run them and read their output. They share `hidpp.mjs`, which the plugin's own code can follow.
+- `src/plugin.ts` registers the actions, and `src/actions/` holds them: so far Set Host (`set-host.ts`), which reads its host from the key's settings, shows it in the key's title, and on a press shows a check mark or an alert from what came of the switch.
+- `src/mouse.ts` is the only module that talks to `node-hid`. It finds the mouse through the receivers plugged in, and sends it to a host, as described in [How the mouse is reached](#how-the-mouse-is-reached), one switch at a time. It logs what happened, and returns it rather than throwing. Every press opens the receivers afresh, and closes them before it returns.
+- `src/logging.ts` holds the logger every module logs through, instead of `streamDeck.logger`, and the Litra plugin's file target, which writes it to `logs/mx3s.log`, carried on across restarts and rotated by size.
+- Unit tests sit next to the file they test (`mouse.test.ts`), and run with Vitest. They need no receiver and create no `logs/` folder. `mouse.test.ts` runs `src/mouse.ts` against emulated receivers (`src/test-support/emulated-receiver.ts`), which answer as the probes measured them, through a fake `node-hid` (`fake-node-hid.ts`). The action's tests replace `src/mouse.ts`, `@elgato/streamdeck` and `src/logging.ts` with `vi.mock`, and drive the action through `src/test-support/fake-deck.ts`, which sends each event to the action it belongs to, as Stream Deck does.
+- `com.daczarne.mx3s.sdPlugin/` is the plugin folder: `manifest.json`, the settings pages in `ui/` (with the vendored `sdpi-components` in `ui/vendor/`), and the images in `imgs/`. `bin/` (the bundle, with its licenses), `node_modules/` (the native runtime) and `logs/` are build and run output, and aren't committed.
+- `rollup.config.mjs` bundles `src/` into `bin/plugin.js`. `scripts/package-files.mjs`, the Litra plugin's, decides what the build puts in the plugin folder besides the bundle: the files of `node-hid` that run, and the licenses of everything the plugin ships. Changes to it are made in both.
+- `scripts/check-ui.mjs` guards the settings pages (see [Supply chain](#supply-chain)). It's the Litra plugin's, pointed at this plugin folder, and changes to it are made in both. The scripts' tests sit next to them (`check-ui.test.ts`), and run each script with Node, as CI does, in a temporary folder that holds the files it checks (`src/test-support/script-folder.ts`).
+- `scripts/generate-icons.mjs` renders the plugin's icons from the glyphs of `@daczarne/streamdeck-icons` (`daczarne/streamdeck-icons`), as the Litra plugin's does: the MX Master 3S pack's mouse, filled for the category and marketplace icons and the key, centered on the key and small enough to leave room for its title, and outlined for the action's icon. The pack's host numbers are drawn from a font the package doesn't ship, so the key's title names its host instead. A change to a glyph is made there, then taken here by updating the commit the dependency is pinned to and regenerating the icons.
+- `scripts/probes/` holds scripts that talk to the mouse through Bolt receivers, run by hand: reading what the plugin needs, switching the host, and pairing a receiver without Logitech's software. Its README describes how to run them and read their output. They share `hidpp.mjs`, whose requests `src/mouse.ts` sends too, asynchronously.
 - `docs/` holds the documents listed in [Read before changing things](#read-before-changing-things).
 
 ## Commands
@@ -57,6 +53,7 @@ npm run watch             # rebuild and restart the plugin on change
 npm run typecheck         # type-check the sources, and the build and check scripts
 npm run lint              # Biome: lint rules, formatting and import order, without changing anything
 npm run format            # Biome: apply the formatting and the import order
+npm test                  # run the unit tests
 ```
 
 ## Runtime and toolchain
@@ -64,9 +61,9 @@ npm run format            # Biome: apply the formatting and the import order
 - The plugin runs on Node 24, set by `Nodejs.Version` in `manifest.json`. Stream Deck downloads that runtime into `~/Library/Application Support/com.elgato.StreamDeck/NodeJS/`, whose `manifest.json` lists the exact version (24.22.1 when this was written). A plugin keeps the runtime it started with, so a new one reaches it only on its next restart. `tsconfig.json` extends `@tsconfig/node24`, and `@types/node` is the newest version whose minor doesn't go past that runtime's (24.19 for 24.22), since its minor versions don't follow Node's one for one, and it follows the runtime, not the Node used to build.
 - The Node and the npm used to build are pinned in `devEngines` in `package.json` (24.22.1 and 11.19.1, the npm that ships with it), which makes npm refuse any other, to install or to run a script. Node's version is also in `.node-version`, which `n auto` switches to, with its npm, and which CI reads.
 - The repo pins TypeScript 6.0, which no longer loads `@types/*` automatically, hence `"types": ["node"]` in `tsconfig.json`. `.vscode/settings.json` points the editor at the repo's TypeScript, so the editor and the build check types with the same version.
-- `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsconfig.scripts.json` extends it to check, as JavaScript, `rollup.config.mjs` and the scripts, `generate-icons.mjs` included, which takes the glyphs' types from the declarations `@daczarne/streamdeck-icons` ships. `tsconfig.json` doesn't allow JavaScript: Rollup's TypeScript plugin reads it, and would start processing JavaScript in the build. `npm run typecheck` runs both configs.
+- `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsconfig.scripts.json` extends it to check, as JavaScript, `rollup.config.mjs`, the Vitest config and the scripts, `generate-icons.mjs` included, which takes the glyphs' types from the declarations `@daczarne/streamdeck-icons` ships, and with them the scripts' tests, which import the scripts they test. `tsconfig.json` doesn't allow JavaScript: Rollup's TypeScript plugin reads it, and would start processing JavaScript in the build. `npm run typecheck` runs both configs.
 - Biome lints and formats the TypeScript and JavaScript, from `biome.json`, with the same version and settings as the Litra plugin. Its config has to stay at the repository root: from anywhere else, its type-aware rules, such as `noFloatingPromises`, report nothing, without a warning.
-- `node-hid` is a dependency, used so far only by the probes. It ships native binaries, so once the plugin uses it, Rollup keeps it external and the build copies the files of it that run next to the bundle, as the Litra plugin's `rollup.config.mjs` and `scripts/package-files.mjs` do.
+- `node-hid` ships native binaries, so Rollup keeps it external and `copyNativeRuntime` in `rollup.config.mjs` copies the files of it and of `pkg-prebuilds` that run on macOS and Windows into the plugin folder, from the list in `scripts/package-files.mjs`. The build stops when a listed file is missing. A linked plugin also finds the repo's top-level `node_modules`, so a package left off the list breaks only an installed plugin.
 
 ## Supply chain
 
@@ -97,7 +94,7 @@ What shapes the design:
 ## Testing on the hardware
 
 - Build, enable developer mode (`npx streamdeck dev`), `npm run link`, then `npx streamdeck restart com.daczarne.mx3s`. The actions appear under the plugin's category. Developer mode stays on. A change to `manifest.json` takes effect only once Stream Deck itself is quit and reopened, so mention it whenever a branch changes the manifest.
-- Plugin logs are in `com.daczarne.mx3s.sdPlugin/logs/`. Stream Deck's own log, `~/Library/Logs/ElgatoStreamDeck/StreamDeck.log`, records what it refuses from the plugin.
+- Plugin logs are in `com.daczarne.mx3s.sdPlugin/logs/`, newest in `mx3s.log`, which tells each press and what came of it. The SDK's own `com.daczarne.mx3s.<n>.log` files there hold what the SDK reports itself, such as an uncaught exception. Stream Deck's own log, `~/Library/Logs/ElgatoStreamDeck/StreamDeck.log`, records what it refuses from the plugin.
 - Switching the host moves the mouse away from the computer running the test. Say so before asking for a check that does it, and how to bring the mouse back.
 - The probes in `scripts/probes/` reach the mouse through Bolt receivers, and need no permission. Never ask for Input Monitoring, for a probe or for the Stream Deck app.
 - Claude can't see the Deck. The user checks what the keys show, and can share a photo of them.
@@ -108,7 +105,7 @@ What shapes the design:
 
 - Create branches with `git switch -c`.
 - Commit messages explain the why and end with the `Co-Authored-By` trailer for Claude. Commit only when asked.
-- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, and `npm run validate` on every pull request and on `main`. Locally, `/lint` runs the same checks. The tests join both when they arrive.
+- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`. Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the tests, and `/ci` runs both.
 - Write the pull request title and description with the `pr-description` skill.
 - Draft issues with the `github-issues` skill, and post them only when asked.
 

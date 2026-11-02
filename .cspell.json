@@ -5,6 +5,7 @@
     "**/.git/**",
     "com.daczarne.mx3s.sdPlugin/bin/**",
     "com.daczarne.mx3s.sdPlugin/logs/**",
+    "com.daczarne.mx3s.sdPlugin/node_modules/**",
     "com.daczarne.mx3s.sdPlugin/**/vendor/**",
     "node_modules/**",
   ],
