@@ -1,8 +1,8 @@
 /**
- * What the probes share: finding and opening a Logi Bolt receiver's HID++ channel, and the HID++ requests they send
- * through it. HID++ 1.0 reads the receiver's own registers, and HID++ 2.0 reaches a paired device, by its slot on the
- * receiver, through its features. Every request waits for its own reply, and skips the notifications that arrive in
- * between.
+ * What the probes share: finding and opening the HID++ channels of the Logi Bolt receivers plugged in, and the HID++
+ * requests they send through them. HID++ 1.0 reads and writes the receiver's own registers, and HID++ 2.0 reaches a
+ * paired device, by its slot on the receiver, through its features. Every request waits for its own reply, and skips
+ * the notifications that arrive in between.
  */
 import HID from "node-hid";
 
@@ -21,10 +21,12 @@ const RECEIVER = 0xff;
 const SLOTS = 6;
 const SOFTWARE_ID = 0x0a;
 
-// HID++ 1.0 sub-IDs, and the registers the probes read: the receiver's connection state, and its pairing information,
-// one sub-register per slot.
+// HID++ 1.0 sub-IDs, and the registers the probes use: the receiver's notification flags, its connection state, and
+// its pairing information, one sub-register per slot.
+const SET_REGISTER = 0x80;
 const GET_REGISTER = 0x81;
 const GET_LONG_REGISTER = 0x83;
+const NOTIFICATIONS = 0x00;
 const ERROR_1_0 = 0x8f;
 const ERROR_2_0 = 0xff;
 const CONNECTION_STATE = 0x02;
@@ -48,19 +50,31 @@ export function hex(bytes) {
 }
 
 /**
- * Opens the HID++ channel of the first Bolt receiver connected. It throws when there's none, or when it can't be
- * opened, which is what a missing permission would look like.
+ * The device paths of the HID++ channels of every Bolt receiver plugged in, one per receiver. It throws when there's
+ * none.
  *
- * @returns {Device}
+ * @returns {string[]}
  */
-export function openReceiver() {
-  const info = HID.devices().find(
-    (d) => d.vendorId === LOGITECH && d.productId === BOLT_RECEIVER && d.usagePage === HIDPP_USAGE_PAGE,
-  );
-  if (!info?.path) {
+export function receiverPaths() {
+  const paths = HID.devices()
+    .filter((d) => d.vendorId === LOGITECH && d.productId === BOLT_RECEIVER && d.usagePage === HIDPP_USAGE_PAGE)
+    .flatMap((d) => (d.path ? [d.path] : []));
+  if (paths.length === 0) {
     throw new Error("no Logi Bolt receiver found");
   }
-  return new HID.HID(info.path);
+  // A receiver lists its HID++ channel twice, for short and long reports, on the same path.
+  return [...new Set(paths)];
+}
+
+/**
+ * Opens a receiver's HID++ channel, by its path from {@link receiverPaths}. It throws when it can't be opened, which is
+ * what a missing permission would look like.
+ *
+ * @param {string} path
+ * @returns {Device}
+ */
+export function openReceiver(path) {
+  return new HID.HID(path);
 }
 
 /**
@@ -108,6 +122,45 @@ function readRegister(device, sub, register, params = []) {
     (r) => r[1] === RECEIVER && r[2] === sub && r[3] === register && (params[0] === undefined || r[4] === params[0]),
     (r) => r[1] === RECEIVER && r[2] === ERROR_1_0 && r[3] === sub && r[4] === register,
   );
+}
+
+/**
+ * Writes a short register of the receiver, with up to three bytes of parameters.
+ *
+ * @param {Device} device
+ * @param {number} register
+ * @param {number[]} params
+ * @returns {void}
+ */
+export function writeRegister(device, register, params) {
+  request(
+    device,
+    [0x10, RECEIVER, SET_REGISTER, register, ...params, 0, 0, 0].slice(0, 7),
+    (r) => r[1] === RECEIVER && r[2] === SET_REGISTER && r[3] === register,
+    (r) => r[1] === RECEIVER && r[2] === ERROR_1_0 && r[3] === SET_REGISTER && r[4] === register,
+  );
+}
+
+/**
+ * The receiver's notification flags, as the three bytes of its notifications register. Which notifications it sends,
+ * such as those about the devices it finds and pairs, depends on them.
+ *
+ * @param {Device} device
+ * @returns {number[]}
+ */
+export function notificationFlags(device) {
+  return readRegister(device, GET_REGISTER, NOTIFICATIONS).slice(4, 7);
+}
+
+/**
+ * Sets the receiver's notification flags, as the three bytes {@link notificationFlags} reads.
+ *
+ * @param {Device} device
+ * @param {number[]} flags
+ * @returns {void}
+ */
+export function setNotificationFlags(device, flags) {
+  writeRegister(device, NOTIFICATIONS, flags);
 }
 
 /**

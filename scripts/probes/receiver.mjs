@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Reads, through a Logi Bolt receiver, everything the plugin needs to know before switching the host: that the
- * receiver's HID++ channel opens, the devices it has paired, and for each one its HID++ version, the index of
+ * Reads, through every Logi Bolt receiver plugged in, everything the plugin needs to know before switching the host:
+ * that the receiver's HID++ channel opens, the devices it has paired, and for each one its HID++ version, the index of
  * CHANGE_HOST, and its hosts. It only reads: it never switches the host.
  */
 import {
@@ -13,6 +13,7 @@ import {
   pairedCount,
   pairedDevices,
   ping,
+  receiverPaths,
 } from "./hidpp.mjs";
 
 /** @import { HID as Device } from "node-hid" */
@@ -44,23 +45,41 @@ function probeDevice(device, { slot, productId }) {
   }
 }
 
-/** @type {Device} */
-let device;
-try {
-  device = openReceiver();
-} catch (error) {
-  console.log(`can't open the receiver: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+/**
+ * Prints what one receiver has paired, and what each of its devices answers.
+ *
+ * @param {string} path
+ * @returns {void}
+ */
+function probeReceiver(path) {
+  /** @type {Device} */
+  let device;
+  try {
+    device = openReceiver(path);
+  } catch (error) {
+    console.log(`${path}: can't open the receiver: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`${path}: opened the receiver's HID++ channel`);
+  try {
+    console.log(`paired devices: ${pairedCount(device)}`);
+    for (const paired of pairedDevices(device)) {
+      probeDevice(device, paired);
+    }
+  } catch (error) {
+    console.log(`error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
+  } finally {
+    device.close();
+  }
 }
-console.log("opened the receiver's HID++ channel");
+
 try {
-  console.log(`paired devices: ${pairedCount(device)}`);
-  for (const paired of pairedDevices(device)) {
-    probeDevice(device, paired);
+  for (const path of receiverPaths()) {
+    probeReceiver(path);
   }
 } catch (error) {
-  console.log(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.log(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
-} finally {
-  device.close();
 }
