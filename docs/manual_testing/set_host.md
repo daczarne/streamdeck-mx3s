@@ -4,7 +4,7 @@
 - [Setup](#setup)
 - [Checks](#checks)
 
-The unit tests check against emulated receivers how the plugin finds the mouse, through which receiver and in which slot, asks it for its hosts, and sends it to another, and what it reports and logs when no receiver reaches it. They also check against a fake Stream Deck that a key's title shows its host, and that a press shows a check mark or an alert from what came of it. The checks below cover what they take for granted: that the receivers answer as the probes measured them, that the plugin, as Stream Deck starts it, opens a receiver with no permission, that the mouse goes where it's sent, and that Stream Deck shows what the plugin sets.
+The unit tests check against emulated receivers, listed as macOS and as Windows list them, how the plugin finds the mouse, through which receiver and in which slot, asks it for its hosts, and sends it to another, and what it reports and logs when no receiver reaches it. They also check against a fake Stream Deck that a key's title shows its host, and that a press shows a check mark or an alert from what came of it. The checks below cover what they take for granted: that the receivers answer as the probes measured them, that Windows lists a receiver's HID++ channel as the emulation does, that the plugin, as Stream Deck starts it, opens a receiver with no permission, that the mouse goes where it's sent, and that Stream Deck shows what the plugin sets.
 
 ## When to run these checks
 

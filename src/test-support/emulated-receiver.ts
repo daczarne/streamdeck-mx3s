@@ -4,6 +4,9 @@ import type { Device as HidDeviceInfo } from "node-hid";
  * A Logi Bolt receiver, and the devices paired with it, as the probes in `scripts/probes/` measured them: it answers the
  * HID++ requests the plugin sends, through its HID++ channel, and passes on to a paired device the ones addressed to its
  * slot. Only the registers and features the plugin uses are here.
+ *
+ * On macOS, its HID++ channel is one path, which carries reports of both lengths. On Windows, it's two, one per report
+ * length, as Windows lists a HID device's collections: each takes only the reports of its length, and gets only those.
  */
 
 const LOGITECH = 0x046d;
@@ -33,6 +36,15 @@ const GENERIC_DESKTOP = 0x01;
 /** What a paired device does with a request while it isn't connected to the receiver, as on another channel. */
 export type Away = "error" | "silent";
 
+/** The system the receiver is plugged into, which decides how its HID++ channel is listed. */
+export type System = "macos" | "windows";
+
+/** Which reports a handle on the HID++ channel carries: both lengths on macOS, one on Windows. */
+type Carries = "both" | "short" | "long";
+
+/** A handle opened on the HID++ channel: what it carries, and the reports waiting to be read on it. */
+export type ReceiverHandle = { carries: Carries; input: number[][] };
+
 /** A device paired with the receiver: the mouse, or another one. */
 export type PairedDevice = {
   productId: number;
@@ -51,14 +63,43 @@ let nextReceiver = 1;
 
 /** A Logi Bolt receiver plugged in, with its paired devices by slot. */
 export class EmulatedReceiver {
-  readonly path = `DevSrvsID:${4294967296 + nextReceiver}`;
-  private readonly keyboardPath = `DevSrvsID:${4294967296 + nextReceiver++}-keyboard`;
+  private readonly number = nextReceiver++;
   private readonly slots = new Map<number, PairedDevice>();
-  // The reports waiting to be read on each open handle: a receiver sends every report to all of them.
-  private readonly handles = new Set<number[][]>();
+  // The handles open on the HID++ channel: a receiver sends every report to each one that carries it.
+  private readonly handles = new Set<ReceiverHandle>();
   // Notifications sent before the reply to the next request, as when a device connects meanwhile.
   private readonly pendingNotifications: number[][] = [];
   failsToOpen = false;
+  // On Windows, only the path of long reports fails to open.
+  longFailsToOpen = false;
+  // A receiver that answers nothing, not even its own registers.
+  mute = false;
+
+  /** A receiver plugged into `system`. */
+  constructor(readonly system: System = "macos") {}
+
+  /**
+   * The paths of the HID++ channel, as node-hid lists them: one on macOS, and one per report length on Windows, short
+   * reports first, which differ only in their collection and in the last number of their instance.
+   */
+  get paths(): string[] {
+    if (this.system === "macos") {
+      return [`DevSrvsID:${4294967296 + this.number}`];
+    }
+    const instance = `#7&${(0x1c2a4b30 + this.number).toString(16)}&0&`;
+    const guid = "#{4d1e55b2-f16f-11cf-88cb-001111000030}";
+    return [1, 2].map((col) => `\\\\?\\HID#VID_046D&PID_C548&MI_02&Col0${col}${instance}000${col - 1}${guid}`);
+  }
+
+  /** The path of short reports, the one requests are written to. */
+  get shortPath(): string {
+    return this.paths[0] ?? "";
+  }
+
+  /** The path of long reports, which is the path of short ones on macOS. */
+  get longPath(): string {
+    return this.paths.at(-1) ?? "";
+  }
 
   /**
    * Pairs a device in `slot`: by default the mouse, connected, on host 1 of 3, with CHANGE_HOST at index 10, as the
@@ -84,42 +125,52 @@ export class EmulatedReceiver {
   }
 
   /**
-   * The HID devices the receiver shows, as node-hid lists them on macOS: its HID++ channel twice, for short and long
-   * reports, on the same path, and its keyboard on another.
+   * The HID devices the receiver shows, as node-hid lists them: its HID++ channel twice, with usage 1 for short reports
+   * and 2 for long ones, on the same path on macOS and on two on Windows, and its keyboard on another.
    */
   get info(): HidDeviceInfo[] {
     const base = { vendorId: LOGITECH, productId: BOLT_RECEIVER, release: 0x0101, interface: 2 };
     return [
-      { ...base, path: this.path, usagePage: HIDPP_USAGE_PAGE, usage: 1 },
-      { ...base, path: this.path, usagePage: HIDPP_USAGE_PAGE, usage: 2 },
-      { ...base, path: this.keyboardPath, usagePage: GENERIC_DESKTOP, usage: 6, interface: 0 },
+      { ...base, path: this.shortPath, usagePage: HIDPP_USAGE_PAGE, usage: 1 },
+      { ...base, path: this.longPath, usagePage: HIDPP_USAGE_PAGE, usage: 2 },
+      { ...base, path: `${this.shortPath}-keyboard`, usagePage: GENERIC_DESKTOP, usage: 6, interface: 0 },
     ];
   }
 
-  /** Opens a handle on the HID++ channel, and returns the reports waiting to be read on it. */
-  open(): number[][] {
-    if (this.failsToOpen) {
+  /** Opens a handle on one of the HID++ channel's paths. */
+  open(path: string): ReceiverHandle {
+    if (this.failsToOpen || (this.longFailsToOpen && path === this.longPath)) {
       throw new Error("cannot open device");
     }
-    const input: number[][] = [];
-    this.handles.add(input);
-    return input;
+    const carries: Carries = this.system === "macos" ? "both" : path === this.shortPath ? "short" : "long";
+    const handle = { carries, input: [] };
+    this.handles.add(handle);
+    return handle;
   }
 
   /** Closes a handle, whose reports go unread. */
-  close(input: number[][]): void {
-    this.handles.delete(input);
+  close(handle: ReceiverHandle): void {
+    this.handles.delete(handle);
   }
 
-  /** Takes a report written to the receiver, and sends its reply, if any, to every open handle. */
-  receive(report: number[]): void {
-    const reply = this.reply(report);
+  /**
+   * Takes a report written through a handle, and sends its reply, if any, to every open handle that carries it. On
+   * Windows, a handle refuses a report of the other length, as Windows does, with the error node-hid gives.
+   */
+  receive(report: number[], through: ReceiverHandle): void {
+    if (through.carries !== "both" && report.length !== (through.carries === "short" ? 7 : 20)) {
+      throw new Error("Cannot write to hid device");
+    }
+    const reply = this.mute ? undefined : this.reply(report);
     if (reply === undefined) {
       return;
     }
     const sent = [...this.pendingNotifications.splice(0), reply];
-    for (const input of this.handles) {
-      input.push(...sent.map((r) => [...r]));
+    for (const handle of this.handles) {
+      const carried = sent.filter(
+        (r) => handle.carries === "both" || (r[0] === SHORT) === (handle.carries === "short"),
+      );
+      handle.input.push(...carried.map((r) => [...r]));
     }
   }
 

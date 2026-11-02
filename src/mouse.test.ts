@@ -159,6 +159,65 @@ describe("switchHost", () => {
     });
   });
 
+  describe("on Windows, where a receiver's HID++ channel is two paths, one per report length", () => {
+    it("writes to the path of short reports, and reads the replies that come on either", async () => {
+      const receiver = new EmulatedReceiver("windows");
+      // Slot 1 is empty: its error comes as a short report, and the mouse's replies as long ones.
+      const mouse = receiver.pair(2);
+      connect(receiver);
+
+      const result = await switchHost(3);
+
+      expect(result).toEqual({ ok: true, outcome: "switched", from: 1 });
+      expect(mouse.current).toBe(3);
+      const writtenTo = hidEvents()
+        .filter((event) => event.call === "write")
+        .map((event) => event.path);
+      expect(new Set(writtenTo)).toEqual(new Set([receiver.shortPath]));
+    });
+
+    it("opens both paths as one receiver, logs them, and closes both", async () => {
+      const receiver = new EmulatedReceiver("windows");
+      receiver.pair(1);
+      connect(receiver);
+
+      await switchHost(2);
+
+      expect(logger.info).toHaveBeenCalledWith(
+        `Opening a receiver's HID++ channel: ${receiver.shortPath} and ${receiver.longPath}`,
+      );
+      expect(calls("open")).toEqual([receiver, receiver]);
+      expect(calls("close")).toEqual(calls("open"));
+    });
+
+    it("tells two receivers apart", async () => {
+      const away = new EmulatedReceiver("windows");
+      away.pair(1, { connected: false });
+      const here = new EmulatedReceiver("windows");
+      here.pair(1);
+      connect(away, here);
+
+      const result = await switchHost(2);
+
+      expect(result.ok).toBe(true);
+      expect(hostSwitches(away)).toEqual([]);
+      expect(hostSwitches(here)).toHaveLength(1);
+    });
+
+    it("closes the path it opened when the other one can't be opened", async () => {
+      const receiver = new EmulatedReceiver("windows");
+      receiver.pair(1);
+      receiver.longFailsToOpen = true;
+      connect(receiver);
+
+      const result = await switchHost(2);
+
+      expect(result).toEqual({ ok: false, outcome: "unreachable" });
+      expect(logger.warn).toHaveBeenCalledWith("Can't open a receiver's HID++ channel", expect.any(Error));
+      expect(calls("close")).toEqual([receiver]);
+    });
+  });
+
   describe("when no receiver reaches the mouse", () => {
     it("reports no receiver when none is plugged in", async () => {
       const result = await switchHost(2);
@@ -197,6 +256,22 @@ describe("switchHost", () => {
 
       expect(result).toEqual({ ok: false, outcome: "failed" });
       expect(logger.error).toHaveBeenCalledWith("Can't list the HID devices", error);
+    });
+
+    it("reports a failure, rather than an empty slot, when the receiver doesn't answer", async () => {
+      const receiver = new EmulatedReceiver();
+      receiver.pair(1);
+      receiver.mute = true;
+      connect(receiver);
+
+      const result = await switchHost(2);
+
+      expect(result).toEqual({ ok: false, outcome: "failed" });
+      // The pairing information of slot 1, asked of the receiver.
+      expect(logger.error).toHaveBeenCalledWith(
+        "A request to the receiver failed",
+        expect.objectContaining({ message: "No reply to 10 ff 83 b5 51 00 00" }),
+      );
     });
   });
 

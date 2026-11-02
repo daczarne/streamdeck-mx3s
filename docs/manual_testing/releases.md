@@ -25,7 +25,7 @@ Download `com.daczarne.mx3s.streamDeckPlugin` from the release's page. Then open
 1. **The download is the package the workflow built.** Its SHA-256, from `shasum -a 256` on macOS or `Get-FileHash` in PowerShell on Windows, is the one the release's notes give. With the GitHub CLI, `gh attestation verify com.daczarne.mx3s.streamDeckPlugin --repo daczarne/streamdeck-mx3s` passes.
 2. **It installs.** Open the file: Stream Deck installs the plugin, and the **MX Master 3S** category lists the Set Host action, with its icon. When an older release is installed, the new one replaces it, and the keys already placed keep their hosts.
 3. **The installed plugin switches the mouse.** Run checks 1, 2, 3, 5 and 6 of [the Set Host checks][set-host] on the installed plugin. On macOS, also run check 4: no permission is asked for.
-4. **It logs in its own folder.** The log folder holds `mx3s.log`, starting with `Plugin started`, and then a line for each press: nothing came from the computer that built the package.
+4. **It logs in its own folder.** The log folder holds `mx3s.log`, starting with `Plugin started`, and then the lines of each press: nothing came from the computer that built the package. On Windows, each press's `Opening a receiver's HID++ channel` line names two paths, one with `Col01` and one with `Col02`: a line with one path means the plugin took them for two receivers.
 5. **It ships its licenses.** The plugin's `bin/` folder, next to `logs/`, holds `LICENSE` and `THIRD_PARTY_LICENSES.txt`.
 6. **It's removed cleanly.** Uninstall the plugin from the **Plugins** tab of Stream Deck's preferences: its actions leave the list, and its folder, logs included, is gone.
 
