@@ -1,3 +1,4 @@
+hidpp
 litra
 Logi
 Solaar

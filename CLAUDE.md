@@ -16,7 +16,7 @@
 
 A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Switch hosts (the 1, 2 and 3 on the mouse) by talking HID++ 2.0 to it directly, without Logi Options+ or G HUB. It follows the Litra plugin (`daczarne/streamdeck-litra`), which controls Logitech lights the same way, over `node-hid` and Logitech's vendor HID interface, and takes its structure, tooling and conventions from it.
 
-The plugin is made and checked on macOS, with a Stream Deck + XL running Stream Deck 7.6, and an MX Master 3S connected directly over Bluetooth. The manifest also lists Windows 10, where the plugin isn't checked, so a change shouldn't assume macOS without saying why. It needs neither Logi Options+ nor G HUB, and is checked without them installed.
+The plugin is made and checked on macOS, with a Stream Deck + XL running Stream Deck 7.6, and an MX Master 3S connected through a Logi Bolt receiver on each host. The manifest also lists Windows 10, where the plugin isn't checked, so a change shouldn't assume macOS without saying why. It needs neither Logi Options+ nor G HUB, and is checked without them installed.
 
 The plugin isn't released. Development runs linked from the repo, never installed, so the Deck runs whatever is built from the checked-out branch: a change takes effect on the next build and restart.
 
@@ -40,6 +40,7 @@ The repository was scaffolded with `streamdeck create`, and the rules below desc
 - `rollup.config.mjs` bundles `src/` into `bin/plugin.js`.
 - `scripts/check-ui.mjs` guards the settings pages (see [Supply chain](#supply-chain)). It's the Litra plugin's, pointed at this plugin folder, and changes to it are made in both.
 - `scripts/generate-icons.mjs` renders the plugin's icons from the glyphs of `@daczarne/streamdeck-icons` (`daczarne/streamdeck-icons`), as the Litra plugin's does: so far the category and marketplace icons, the MX Master 3S pack's mouse, filled. The action images in `imgs/` are still the template's. A change to a glyph is made there, then taken here by updating the commit the dependency is pinned to and regenerating the icons.
+- `scripts/probes/` holds scripts that talk to the mouse through Bolt receivers, run by hand: reading what the plugin needs, switching the host, and pairing a receiver without Logitech's software. Its README describes how to run them and read their output. They share `hidpp.mjs`, which the plugin's own code can follow.
 - `docs/` holds the documents listed in [Read before changing things](#read-before-changing-things).
 
 ## Commands
@@ -65,7 +66,7 @@ npm run format            # Biome: apply the formatting and the import order
 - The repo pins TypeScript 6.0, which no longer loads `@types/*` automatically, hence `"types": ["node"]` in `tsconfig.json`. `.vscode/settings.json` points the editor at the repo's TypeScript, so the editor and the build check types with the same version.
 - `tsconfig.json` adds the Litra plugin's stricter checks to `strict`, such as `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsconfig.scripts.json` extends it to check, as JavaScript, `rollup.config.mjs` and the scripts, `generate-icons.mjs` included, which takes the glyphs' types from the declarations `@daczarne/streamdeck-icons` ships. `tsconfig.json` doesn't allow JavaScript: Rollup's TypeScript plugin reads it, and would start processing JavaScript in the build. `npm run typecheck` runs both configs.
 - Biome lints and formats the TypeScript and JavaScript, from `biome.json`, with the same version and settings as the Litra plugin. Its config has to stay at the repository root: from anywhere else, its type-aware rules, such as `noFloatingPromises`, report nothing, without a warning.
-- `node-hid` ships native binaries, so when it arrives, Rollup keeps it external and the build copies the files of it that run next to the bundle, as the Litra plugin's `rollup.config.mjs` and `scripts/package-files.mjs` do.
+- `node-hid` is a dependency, used so far only by the probes. It ships native binaries, so once the plugin uses it, Rollup keeps it external and the build copies the files of it that run next to the bundle, as the Litra plugin's `rollup.config.mjs` and `scripts/package-files.mjs` do.
 
 ## Supply chain
 
@@ -79,18 +80,18 @@ Supply-chain risk is a hard requirement here:
 
 ## How the mouse is reached
 
-A proof of concept, run by hand from Terminal, read the mouse's current host and switched it, over Bluetooth on macOS:
+The mouse is reached through a Logi Bolt receiver, one per host, paired with the mouse on that host's Easy-Switch channel. Probes run by hand read the mouse's current host and switched it this way on macOS, with no permission:
 
-1. Find the HID interface with vendor `0x046d`, product `0xb034` (the MX Master 3S over Bluetooth), usage page `0xff43` and usage `0x0202`, Logitech's HID++ channel.
+1. Find the HID++ channel of each Bolt receiver plugged in: vendor `0x046d`, product `0xc548`, usage page `0xff00`. Read each receiver's pairing information (register `0xB5`, sub-register `0x50` + slot) for the slot that holds the mouse, product `0xb034`. The slot is the device index of every request to the mouse.
 2. Ask IRoot (feature index `0x00`, function 0, `getFeature`) for the index of feature `0x1814`, CHANGE_HOST. The index differs per device, so it's never hard-coded.
 3. CHANGE_HOST function 0, `getHostInfo`, answers the number of hosts and the current one, counted from 0.
 4. CHANGE_HOST function 1, `setCurrentHost`, takes a host counted from 0. The mouse leaves at once, so no reply comes.
 
-Messages are HID++ long reports of 20 bytes: `0x11`, the device index, the feature index, `(function << 4) | softwareId`, then the parameters. The device index is `0xff` for a mouse connected directly over Bluetooth or USB. Through a Bolt receiver it would be the receiver's slot, and the product would be the receiver's. Solaar's `change-host` setting is the best open reference for HID++ 2.0 features.
+Requests are HID++ short reports of 7 bytes: `0x10`, the device index, the feature index, `(function << 4) | softwareId`, then the parameters. A mouse connected over Bluetooth or USB would take `0xff` as its device index, on usage page `0xff43`. A receiver also pairs a new device through its HID++ channel, without Logitech's software: `scripts/probes/README.md` describes how. Solaar is the best open reference for HID++ 2.0 features and for Bolt pairing.
 
 What shapes the design:
 
-- **Input Monitoring.** Over Bluetooth, all of the mouse's HID collections, the pointer and the HID++ channel, share one device path. Opening the HID++ channel opens the whole device, which macOS allows only to an app with Input Monitoring. A plugin's permission is the Stream Deck app's, and granting it there would let every plugin read keystrokes system-wide, which isn't acceptable. Finding a way around it comes before any action that opens the mouse on macOS: [#3] holds the options, and where each one stands.
+- **Input Monitoring.** Over Bluetooth, all of the mouse's HID collections, the pointer and the HID++ channel, share one device path, and opening it needs Input Monitoring, which a plugin would hold as the Stream Deck app's, for every plugin it runs. A Bolt receiver keeps its HID++ channel on a device path of its own, which opens with no permission. So the plugin reaches the mouse only through receivers, and asks for no permission ([#3]).
 - **One way from each computer.** Once a computer sends the mouse to another host, it can't call it back. A key sends the mouse to a given host: a toggle can't work. The mouse comes back with its own button, or from the other host.
 
 ## Testing on the hardware
@@ -98,7 +99,7 @@ What shapes the design:
 - Build, enable developer mode (`npx streamdeck dev`), `npm run link`, then `npx streamdeck restart com.daczarne.mx3s`. The actions appear under the plugin's category. Developer mode stays on. A change to `manifest.json` takes effect only once Stream Deck itself is quit and reopened, so mention it whenever a branch changes the manifest.
 - Plugin logs are in `com.daczarne.mx3s.sdPlugin/logs/`. Stream Deck's own log, `~/Library/Logs/ElgatoStreamDeck/StreamDeck.log`, records what it refuses from the plugin.
 - Switching the host moves the mouse away from the computer running the test. Say so before asking for a check that does it, and how to bring the mouse back.
-- A probe that opens the mouse over Bluetooth needs Input Monitoring for the app it runs from, granted only for the probe and revoked afterwards. Never ask for it to be granted to the Stream Deck app.
+- The probes in `scripts/probes/` reach the mouse through Bolt receivers, and need no permission. Never ask for Input Monitoring, for a probe or for the Stream Deck app.
 - Claude can't see the Deck. The user checks what the keys show, and can share a photo of them.
 
 ## Workflow

@@ -17,6 +17,7 @@ mx3s:
           - rollup.config.mjs
           - scripts/check-ui.mjs
           - scripts/generate-icons.mjs
+          - scripts/probes/**
           - src/**
 tools:
   - changed-files:

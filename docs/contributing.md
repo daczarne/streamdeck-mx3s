@@ -57,7 +57,7 @@ Code or configuration that is unused, misleading or contradicts a decision alrea
 
 ## Supported mice
 
-The MX Master 3S, connected directly over Bluetooth, is the plugin's target: it's what the plugin is checked on, and the tests, the fakes and the defaults use its real values. Other connections, such as a Logi Bolt receiver, and other mice are added one at a time, and one is called supported once it has been checked on the hardware.
+The MX Master 3S, connected through a Logi Bolt receiver, is the plugin's target: it's what the plugin is checked on, and the tests, the fakes and the defaults use its real values. Other mice are added one at a time, and one is called supported once it has been checked on the hardware.
 
 ## Working with Claude
 
