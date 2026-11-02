@@ -1,16 +1,18 @@
 # MX Master 3S for Stream Deck
 
-A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Switch hosts, the computers paired to the 1, 2 and 3 on the mouse, without Logitech's software. It isn't released yet: it runs linked from a clone of this repository.
+A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Switch hosts, the computers paired to the 1, 2 and 3 on the mouse, without Logitech's software. It's installed from a file attached to each [release][releases], not from Elgato's Marketplace.
 
 Not an official Logitech or Elgato product.
 
 - [Status](#status)
 - [Supported hardware](#supported-hardware)
 - [Requirements](#requirements)
+- [Installing](#installing)
 - [Setting up on a new computer](#setting-up-on-a-new-computer)
 - [The Set Host key](#the-set-host-key)
 - [Working on the plugin](#working-on-the-plugin)
 - [Settings pages](#settings-pages)
+- [Packaging](#packaging)
 - [Icons](#icons)
 - [Third-party code](#third-party-code)
 - [Credits](#credits)
@@ -32,11 +34,23 @@ The plugin reaches the mouse through a Logi Bolt receiver on each computer, pair
 
 ## Requirements
 
-- [Stream Deck][stream-deck] 7.1 or later, on macOS 12 or later, or Windows 10 or later. The plugin is made and checked on macOS, and isn't checked on Windows.
+- [Stream Deck][stream-deck] 7.1 or later, on macOS 12 or later, or Windows 10 or later. The plugin is developed on macOS, and each release is checked on macOS and on Windows once it's published.
 - An MX Master 3S, and a Logi Bolt receiver on each computer, paired with the mouse on that computer's channel. A receiver bought on its own comes unpaired: `scripts/probes/pair.mjs` pairs it without Logitech's software (see [the probes' README][probes]).
 - No permission. Over Bluetooth, the mouse's pointer and its HID++ channel share one device, which macOS only lets an app with Input Monitoring open. The receiver keeps its HID++ channel apart, so the plugin needs none ([#3]).
 - No Logitech software: neither Logi Options+ nor G HUB is needed.
 - Only to build it from the repository: Node.js at the exact version in `.node-version`, with the npm that ships with it. `devEngines` in `package.json` pins both, and npm refuses any other. With [n][n], `n auto` installs that Node, with its npm, and switches to it. The plugin itself runs on the Node 24 that Stream Deck downloads, so the Node used to build doesn't have to match it.
+
+## Installing
+
+1. Download `com.daczarne.mx3s.streamDeckPlugin` from [the latest release][latest-release].
+2. Open it: Stream Deck installs the plugin, and its actions appear under the **MX Master 3S** category.
+
+A newer release installs the same way, over the one installed. To remove the plugin, uninstall it from the **Plugins** tab of Stream Deck's preferences.
+
+If an installed plugin doesn't work, [an issue][issues] with its log helps. The logs are in the plugin's folder, newest in `mx3s.log`:
+
+- On macOS: `~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.daczarne.mx3s.sdPlugin/logs/`
+- On Windows: `%APPDATA%\Elgato\StreamDeck\Plugins\com.daczarne.mx3s.sdPlugin\logs\`
 
 ## Setting up on a new computer
 
@@ -116,6 +130,20 @@ The policy allows only what the pages need:
 
 Since inline scripts are blocked, a page's own logic goes in a `.js` file in `ui/`. The policy is repeated in each page and in [`scripts/check-ui.mjs`][check-ui], so a change to it updates all of them and the table above.
 
+## Packaging
+
+A release attaches the file this writes:
+
+```shell
+npm run pack
+```
+
+It runs `check:ui`, builds, and writes `release/com.daczarne.mx3s.streamDeckPlugin`, which holds the plugin folder, without what `com.daczarne.mx3s.sdPlugin/.sdignore` leaves out. The build puts in it only the files of `node-hid` that run on macOS and Windows (`scripts/package-files.mjs` lists them), the plugin's license, and the licenses of the code it ships, in `bin/THIRD_PARTY_LICENSES.txt`, since the minified bundle drops them. An installed plugin can't fall back on the repository's `node_modules` the way a linked one does, so a dependency missing from the package only shows once it's installed, which the checks on every release catch.
+
+The Stream Deck CLI rewrites `manifest.json` as it packs, and leaves it without its final newline: add it back, or restore the file, before committing.
+
+How a release is made, from the version to publishing it, is in [`docs/releases.md`][releases-doc].
+
 ## Icons
 
 The plugin's images, its category icon in the Stream Deck app's list of actions, its marketplace icon in its list of plugins, and the Set Host action's icon and key image, are drawn by code, from the glyphs of [`streamdeck-icons`][streamdeck-icons], a development dependency pinned to a commit. That repository also holds the palette, and the MX Master 3S icon pack, which adds keys for the mouse's hosts to Stream Deck's Icon Library. `scripts/generate-icons.mjs` decides which glyph goes where, and renders each to the PNG sizes Stream Deck needs. They're the pack's mouse, filled: the category icon at the size of the pack's own icon, the marketplace icon on a dark rounded tile, so it also shows on a light page, and the Set Host key's image smaller, centered, to leave room for its title under it. The action's icon, in the list of actions, is the mouse outlined.
@@ -145,10 +173,13 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [check-ui]: scripts/check-ui.mjs
 [contributing]: docs/contributing.md
 [issues]: https://github.com/daczarne/streamdeck-mx3s/issues
+[latest-release]: https://github.com/daczarne/streamdeck-mx3s/releases/latest
 [license]: LICENSE
 [n]: https://github.com/tj/n
 [node-hid]: https://github.com/node-hid/node-hid
 [probes]: scripts/probes/README.md
+[releases]: https://github.com/daczarne/streamdeck-mx3s/releases
+[releases-doc]: docs/releases.md
 [sdk]: https://docs.elgato.com/streamdeck
 [sdpi]: https://github.com/GeekyEggo/sdpi-components
 [sdpi-source]: https://github.com/GeekyEggo/sdpi-components/blob/v4.0.1/dist/sdpi-components.js

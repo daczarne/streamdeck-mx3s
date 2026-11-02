@@ -1,5 +1,6 @@
 elgato
 imgs
+sdignore
 sdpi
 showlabels
 streamdeck

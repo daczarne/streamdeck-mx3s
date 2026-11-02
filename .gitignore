@@ -1,10 +1,12 @@
 # Node.js
 node_modules/
 
-# Stream Deck files
+# Stream Deck build / runtime output
 *.sdPlugin/bin
 *.sdPlugin/logs
 *.sdPlugin/node_modules
+release/
+*.streamDeckPlugin
 
 # Local files
 .DS_Store
