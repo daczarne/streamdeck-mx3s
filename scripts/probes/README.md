@@ -11,7 +11,7 @@
   - [Example](#example-2)
   - [After pairing](#after-pairing)
 
-These scripts talk to the mouse through Logi Bolt receivers, to find out how the mouse and the receivers behave before the plugin relies on them: they were written for [#3], which found a receiver's HID++ channel opens on macOS with no permission. They aren't part of the plugin or the build, and are run by hand, with the receivers plugged in.
+These scripts talk to the mouse through Logi Bolt receivers, to find out how the mouse and the receivers behave before the plugin relies on them: they were written for [#3], which found a receiver's HID++ channel opens on macOS with no permission. They aren't part of the plugin or the build, and are run by hand, with the receivers plugged in. Biome and the type check check their code, as they check the other scripts'.
 
 They share `hidpp.mjs`, which finds the HID++ channels of every Bolt receiver plugged in, opens one, and sends the requests through it: HID++ 1.0 to read and write the receiver's registers, and HID++ 2.0 to reach the mouse, by its slot on the receiver. A receiver's pairing information holds each device's serial number, which the probes never print, and `pair.mjs` masks the device's address, so their output can be shared as it is.
 

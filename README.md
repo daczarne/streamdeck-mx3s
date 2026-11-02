@@ -18,7 +18,7 @@ Not an official Logitech or Elgato product.
 
 The plugin is at its start, and has no actions yet: the Counter action it shows is the sample from Elgato's template. The first action will be a key that sends the mouse to a given host.
 
-The plugin will talk to the mouse in-process over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights. A proof of concept, run by hand, has read the mouse's current host and switched it. What stands in the way on macOS is a permission (see [Requirements](#requirements)).
+The plugin will talk to the mouse in-process over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights. A proof of concept, run by hand, has read the mouse's current host and switched it, through a Logi Bolt receiver, with no permission and no Logitech software.
 
 Once a computer sends the mouse to another host, it loses the mouse and can't call it back. A key can send the mouse to a host, but a key that toggles between two hosts can't work. The mouse comes back with its own button, or from the other host.
 
@@ -26,16 +26,16 @@ Once a computer sends the mouse to another host, it loses the mouse and can't ca
 
 | Mouse        | Connection         | Switching hosts                        |
 |--------------|--------------------|----------------------------------------|
-| MX Master 3S | Bluetooth, direct  | Checked by hand, not yet in the plugin |
-| MX Master 3S | Logi Bolt receiver | Not checked                            |
+| MX Master 3S | Logi Bolt receiver | Checked by hand, not yet in the plugin |
+| MX Master 3S | Bluetooth          | Not supported                          |
 
-The plugin is made and checked on an MX Master 3S connected directly over Bluetooth. Other Logitech mice with Easy-Switch support the same HID++ feature, but the plugin isn't checked on any of them. If you try one, [an issue][issues] saying how it went helps.
+The plugin reaches the mouse through a Logi Bolt receiver on each computer, paired with the mouse on that computer's Easy-Switch channel. Over Bluetooth, opening the mouse on macOS needs a permission the plugin doesn't ask for (see [Requirements](#requirements)). Other Logitech mice with Easy-Switch and Bolt support the same HID++ feature, but the plugin isn't checked on any of them. If you try one, [an issue][issues] saying how it went helps.
 
 ## Requirements
 
 - [Stream Deck][stream-deck] 7.1 or later, on macOS 12 or later, or Windows 10 or later. The plugin is made and checked on macOS, and isn't checked on Windows.
-- An MX Master 3S, connected to the computer.
-- On macOS, over Bluetooth, opening the mouse needs the Input Monitoring permission. Its pointer and its HID++ channel share one device, and macOS only lets an app with that permission open it. For a plugin, the permission would be the Stream Deck app's, and would let every plugin it runs read keystrokes system-wide, so the plugin won't ask for it. A way around it is still to be found: [#3] holds the options, and where each one stands.
+- An MX Master 3S, and a Logi Bolt receiver on each computer, paired with the mouse on that computer's channel. A receiver bought on its own comes unpaired: `scripts/probes/pair.mjs` pairs it without Logitech's software (see [the probes' README][probes]).
+- No permission. Over Bluetooth, the mouse's pointer and its HID++ channel share one device, which macOS only lets an app with Input Monitoring open. The receiver keeps its HID++ channel apart, so the plugin needs none ([#3]).
 - No Logitech software: neither Logi Options+ nor G HUB is needed.
 - Only to build it from the repository: Node.js at the exact version in `.node-version`, with the npm that ships with it. `devEngines` in `package.json` pins both, and npm refuses any other. With [n][n], `n auto` installs that Node, with its npm, and switches to it. The plugin itself runs on the Node 24 that Stream Deck downloads, so the Node used to build doesn't have to match it.
 
@@ -126,7 +126,7 @@ To update it, download `dist/sdpi-components.js` from the new upstream tag (not 
 
 ## Credits
 
-- [Solaar][solaar]: the best open reference for Logitech's HID++ 2.0 features, its change-host setting included.
+- [Solaar][solaar]: the best open reference for Logitech's HID++ 2.0 features, its change-host setting included, and for pairing Bolt receivers.
 - [`node-hid`][node-hid]: HID access from Node.
 - [sdpi-components][sdpi]: the settings pages' components.
 - [Elgato Stream Deck SDK][sdk].
@@ -140,6 +140,7 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [license]: LICENSE
 [n]: https://github.com/tj/n
 [node-hid]: https://github.com/node-hid/node-hid
+[probes]: scripts/probes/README.md
 [sdk]: https://docs.elgato.com/streamdeck
 [sdpi]: https://github.com/GeekyEggo/sdpi-components
 [sdpi-source]: https://github.com/GeekyEggo/sdpi-components/blob/v4.0.1/dist/sdpi-components.js

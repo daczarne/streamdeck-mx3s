@@ -8,6 +8,7 @@
   "include": [
     "rollup.config.mjs",
     "scripts/check-ui.mjs",
-    "scripts/generate-icons.mjs"
+    "scripts/generate-icons.mjs",
+    "scripts/probes/*.mjs"
   ]
 }
