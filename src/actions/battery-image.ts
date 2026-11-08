@@ -24,12 +24,17 @@ import type { Battery } from "../battery";
 const SIZE = 144;
 
 // Each glyph in the top row takes a square canvas a third of the key wide, `TOP` below its top edge, centered on a
-// third of the key. The percentage's canvas is the key's, moved `NUMBER_DROP` down, so the number sits under the row.
+// third of the key. The percentage's canvas is `NUMBER` of the key's, centered on the key and moved `NUMBER_DROP`
+// down, so the number sits under the row, and "100%", the widest, spans about as far as the row does.
 const CELL = 0.34;
 const TOP = 0.03;
 const CENTERS = [0.17, 0.5, 0.83] as const;
+const NUMBER = 0.9;
 const NUMBER_DROP = 0.17;
 const CELL_SIZE = SIZE * CELL;
+
+// The bolt's color while the mouse charges, unless a key picks another: a bright pink, which no level takes.
+const CHARGING = "#FF007F";
 
 /** The background a key takes unless it chooses another. */
 export const DEFAULT_BACKGROUND = TILES.charcoal;
@@ -44,12 +49,12 @@ export const DEFAULT_MOUSE: MouseStyle = { color: WHITE, filled: true, followsLe
 export const DEFAULT_BATTERY: BatteryStyle = { color: ACCENTS.leaf, followsLevel: true };
 
 /**
- * The bolt a key shows unless it chooses another: while the mouse charges, in the palette's green, and, for a key that
- * shows it always, in its slate, dim on the charcoal tile, while the mouse doesn't charge.
+ * The bolt a key shows unless it chooses another: always, in a bright pink while the mouse charges, and in the
+ * palette's slate, dim on the charcoal tile, while it doesn't.
  */
 export const DEFAULT_BOLT: BoltStyle = {
-  show: "charging",
-  charging: ACCENTS.leaf,
+  show: "always",
+  charging: CHARGING,
   chargingFollowsLevel: false,
   idle: TILES.slate,
 };
@@ -191,8 +196,9 @@ function place(center: number, glyph: string): string {
 
 /** The percentage under the top row, in `color`, or dashes before the first reading. */
 function percentage(battery: Battery | undefined, color: string): string {
-  const number = percentageGlyph(SIZE, battery === undefined ? { color } : { percentage: battery.percentage, color });
-  return `<g transform="translate(0 ${SIZE * NUMBER_DROP})">${number}</g>`;
+  const side = SIZE * NUMBER;
+  const number = percentageGlyph(side, battery === undefined ? { color } : { percentage: battery.percentage, color });
+  return `<g transform="translate(${(SIZE - side) / 2} ${SIZE * NUMBER_DROP + (SIZE - side) / 2})">${number}</g>`;
 }
 
 /** Whether a key shows the bolt: always, never, or while the last reading says the mouse is on its cable. */

@@ -274,7 +274,7 @@ describe("styleOf", () => {
   it.each([
     ["the bolt always", { showBolt: "always" }, { ...DEFAULT_BOLT, show: "always" }],
     ["the bolt never", { showBolt: "never" }, { ...DEFAULT_BOLT, show: "never" }],
-    ["the bolt while charging", { showBolt: "charging" }, DEFAULT_BOLT],
+    ["the bolt while charging", { showBolt: "charging" }, { ...DEFAULT_BOLT, show: "charging" }],
     [
       "the bolt's colors",
       { boltColor: "#a1b2c3", boltIdleColor: "#c3b2a1" },
@@ -316,7 +316,7 @@ describe("styleOf", () => {
   it("takes the default bolt, with a warning, for settings that aren't one", () => {
     expect(styleOf({ showBolt: "sometimes", boltColor: 3, boltIdleColor: "grey" })).toEqual(TILE);
     expect(logger.warn).toHaveBeenCalledWith(
-      'Setting showBolt is "sometimes", not one of always, charging, never: using charging',
+      'Setting showBolt is "sometimes", not one of always, charging, never: using always',
     );
     expect(logger.warn).toHaveBeenCalledWith(`Setting boltColor is 3, not a color: using ${DEFAULT_BOLT.charging}`);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -374,7 +374,7 @@ describe("styleOf", () => {
       `<sdpi-checkbox setting="${setting}" ${shown ? 'default="true" ' : ""}label="${label}">`;
     expect(page).toContain(shows("notFoundMouse", "Mouse", DEFAULT_NOT_FOUND.mouse !== undefined));
     expect(page).toContain(shows("notFoundBattery", "Battery", DEFAULT_NOT_FOUND.battery));
-    expect(page).toContain(shows("notFoundBolt", "Bolt", DEFAULT_NOT_FOUND.bolt));
+    expect(page).toContain(shows("notFoundBolt", "Charging", DEFAULT_NOT_FOUND.bolt));
     expect(color("highColor")).toBe(DEFAULT_LEVELS.high.toUpperCase());
     expect(color("mediumColor")).toBe(DEFAULT_LEVELS.medium.toUpperCase());
     expect(color("lowColor")).toBe(DEFAULT_LEVELS.low.toUpperCase());
@@ -405,7 +405,7 @@ describe("the settings page", () => {
       "Background",
       "Mouse icon",
       "Battery icon",
-      "Bolt icon",
+      "Charging icon",
       "Battery level",
       "Mouse not found",
     ]);

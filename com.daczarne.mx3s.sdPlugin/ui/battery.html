@@ -138,14 +138,14 @@
       </sdpi-item>
     </section>
 
-    <!-- The bolt at the right of the key's top row: shown always, only while the mouse charges, or never, which leaves
-         the others where they are. Its color while charging, the palette's green, and, for a key that shows it always,
-         its color while not, the palette's slate, dim on the charcoal tile. While charging, it can take its level's
-         color instead, with Follow battery level. -->
+    <!-- The charging icon, a bolt, at the right of the key's top row: shown always, the default, only while the mouse
+         charges, or never, which leaves the others where they are. Its color while charging, a bright pink, and, for a key that
+         shows it always, its color while not, the palette's slate, dim on the charcoal tile. While charging, it can
+         take its level's color instead, with Follow battery level. -->
     <section>
-      <h2 class="section-heading">Bolt icon</h2>
+      <h2 class="section-heading">Charging icon</h2>
       <sdpi-item>
-        <sdpi-radio setting="showBolt" default="charging" columns="3">
+        <sdpi-radio setting="showBolt" default="always" columns="3">
           <option value="always">Always</option>
           <option value="charging">Charging</option>
           <option value="never">Never</option>
@@ -153,7 +153,7 @@
       </sdpi-item>
       <sdpi-item label="Charging">
         <div class="row">
-          <sdpi-color setting="boltColor" default="#4CBF68"></sdpi-color>
+          <sdpi-color setting="boltColor" default="#FF007F"></sdpi-color>
           <sdpi-checkbox setting="boltFollowsLevel" label="Follow battery level"></sdpi-checkbox>
         </div>
       </sdpi-item>
@@ -252,7 +252,7 @@
         <div class="row">
           <sdpi-checkbox setting="notFoundMouse" default="true" label="Mouse"></sdpi-checkbox>
           <sdpi-checkbox setting="notFoundBattery" label="Battery"></sdpi-checkbox>
-          <sdpi-checkbox setting="notFoundBolt" label="Bolt"></sdpi-checkbox>
+          <sdpi-checkbox setting="notFoundBolt" label="Charging"></sdpi-checkbox>
         </div>
       </sdpi-item>
       <sdpi-item label="Color">

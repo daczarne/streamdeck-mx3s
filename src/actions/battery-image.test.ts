@@ -42,6 +42,9 @@ function colors(svg: string): Set<string> {
   return new Set([...svg.matchAll(/(?:fill|stroke)="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1] ?? ""));
 }
 
+// The side of the percentage's canvas.
+const NUMBER = 144 * 0.9;
+
 //* Tests
 
 describe("batterySvg", () => {
@@ -55,7 +58,7 @@ describe("batterySvg", () => {
   ])("colors a battery at %s%%, and its percentage, by the default levels", (percentage, color) => {
     const svg = batterySvg({ battery: reading({ percentage }), found: true }, TILE);
 
-    expect(colors(svg)).toEqual(new Set([TILES.charcoal, WHITE, color]));
+    expect(colors(svg)).toEqual(new Set([TILES.charcoal, WHITE, color, DEFAULT_BOLT.idle]));
   });
 
   it.each([
@@ -78,7 +81,7 @@ describe("batterySvg", () => {
 
     const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
 
-    expect(svg).toContain(percentageGlyph(144, { percentage, color }));
+    expect(svg).toContain(percentageGlyph(NUMBER, { percentage, color }));
     expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: percentage / 100, color }));
   });
 
@@ -109,15 +112,17 @@ describe("batterySvg", () => {
   it("draws the percentage, and the battery filled as far", () => {
     const svg = batterySvg({ battery: reading({ percentage: 35 }), found: true }, TILE);
 
-    expect(svg).toContain(percentageGlyph(144, { percentage: 35, color: ACCENTS.gold }));
+    expect(svg).toContain(percentageGlyph(NUMBER, { percentage: 35, color: ACCENTS.gold }));
     expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.35, color: ACCENTS.gold }));
   });
 
-  it("draws a green bolt only while the mouse is charging, whatever its level", () => {
-    const bolt = boltGlyph(144 * 0.34, { color: ACCENTS.leaf });
-
-    expect(batterySvg({ battery: reading({ level: "low", charging: true }), found: true }, TILE)).toContain(bolt);
-    expect(batterySvg({ battery: reading({ charging: false }), found: true }, TILE)).not.toContain("stroke-linejoin");
+  it("draws the bolt always, pink while the mouse is charging and slate while it isn't", () => {
+    expect(batterySvg({ battery: reading({ charging: true }), found: true }, TILE)).toContain(
+      boltGlyph(144 * 0.34, { color: DEFAULT_BOLT.charging }),
+    );
+    expect(batterySvg({ battery: reading({ charging: false }), found: true }, TILE)).toContain(
+      boltGlyph(144 * 0.34, { color: DEFAULT_BOLT.idle }),
+    );
   });
 });
 
@@ -139,7 +144,7 @@ describe("its background", () => {
     const svg = batterySvg({ battery: reading(), found: true }, { ...TILE, background: undefined });
 
     expect(svg).not.toContain("<rect");
-    expect(colors(svg)).toEqual(new Set([WHITE, ACCENTS.leaf]));
+    expect(colors(svg)).toEqual(new Set([WHITE, ACCENTS.leaf, DEFAULT_BOLT.idle]));
   });
 });
 
@@ -173,7 +178,7 @@ describe("its mouse", () => {
 
     const without = batterySvg(shown, { ...TILE, mouse: undefined });
 
-    expect(colors(without)).toEqual(new Set([TILES.charcoal, ACCENTS.leaf]));
+    expect(colors(without)).toEqual(new Set([TILES.charcoal, ACCENTS.leaf, DEFAULT_BOLT.charging]));
     const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
     expect(placed(without)).toEqual(placed(batterySvg(shown, TILE)).slice(1));
   });
@@ -186,7 +191,7 @@ describe("its battery", () => {
     const svg = batterySvg({ battery: reading({ percentage: 20 }), found: true }, { ...TILE, battery });
 
     expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.2, color: "#123456" }));
-    expect(svg).toContain(percentageGlyph(144, { percentage: 20, color: ACCENTS.gold }));
+    expect(svg).toContain(percentageGlyph(NUMBER, { percentage: 20, color: ACCENTS.gold }));
   });
 
   it("is left out when the key chooses not to show it, with the mouse, the bolt and the percentage where they were", () => {
@@ -195,7 +200,7 @@ describe("its battery", () => {
     const without = batterySvg(shown, { ...TILE, battery: undefined });
 
     expect(without).not.toContain(batteryGlyph(144 * 0.34, { charge: 0.95, color: ACCENTS.leaf }));
-    expect(without).toContain(percentageGlyph(144, { percentage: 95, color: ACCENTS.leaf }));
+    expect(without).toContain(percentageGlyph(NUMBER, { percentage: 95, color: ACCENTS.leaf }));
     const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
     const all = placed(batterySvg(shown, TILE));
     expect(placed(without)).toEqual([all[0], ...all.slice(2)]);
@@ -276,7 +281,7 @@ describe("once the mouse isn't found", () => {
 
     expect(colors(svg)).toEqual(new Set([TILES.charcoal, TILES.grey]));
     expect(svg).toContain(mouseGlyph(CELL, { color: TILES.grey, filled: true }));
-    expect(svg).toContain(percentageGlyph(144, { percentage: 25, color: TILES.grey }));
+    expect(svg).toContain(percentageGlyph(NUMBER, { percentage: 25, color: TILES.grey }));
     const all = placed(batterySvg({ battery: reading(), found: true }, TILE));
     expect(placed(svg)).toEqual([all[0], all.at(-1)]);
   });
@@ -286,7 +291,7 @@ describe("once the mouse isn't found", () => {
 
     expect(colors(svg)).toEqual(new Set([TILES.charcoal, TILES.grey]));
     expect(svg).toContain(mouseGlyph(CELL, { color: TILES.grey, filled: true }));
-    expect(svg).toContain(percentageGlyph(144, { color: TILES.grey }));
+    expect(svg).toContain(percentageGlyph(NUMBER, { color: TILES.grey }));
   });
 
   it("shows what the key chooses for it, all in its color, whatever the key shows otherwise", () => {
@@ -299,7 +304,7 @@ describe("once the mouse isn't found", () => {
     expect(svg).toContain(mouseGlyph(CELL, { color: "#654321", filled: false }));
     expect(svg).toContain(batteryGlyph(CELL, { charge: 0.25, color: "#654321" }));
     expect(svg).toContain(boltGlyph(CELL, { color: "#654321" }));
-    expect(svg).toContain(percentageGlyph(144, { percentage: 25, color: "#654321" }));
+    expect(svg).toContain(percentageGlyph(NUMBER, { percentage: 25, color: "#654321" }));
   });
 
   it("shows an empty battery before the first reading, when the key chooses it", () => {
