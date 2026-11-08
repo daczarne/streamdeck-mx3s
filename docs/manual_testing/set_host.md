@@ -8,7 +8,7 @@ The unit tests check against emulated receivers, listed as macOS and as Windows 
 
 ## When to run these checks
 
-- After a change to `src/mouse.ts` or `src/actions/set-host.ts`, to the key's images or its settings page.
+- After a change to `src/mouse.ts`, `src/host.ts` or `src/actions/set-host.ts`, to the key's images or its settings page.
 - After an upgrade of `node-hid`, `@elgato/streamdeck` or `@elgato/utils`.
 - After a Stream Deck or macOS update.
 

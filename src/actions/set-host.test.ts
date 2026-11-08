@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { switchHost } from "../host";
 import { logger } from "../logging";
-import { switchHost } from "../mouse";
 import { FakeDeck } from "../test-support/fake-deck";
 import { SetHostAction } from "./set-host";
 
@@ -12,8 +12,9 @@ vi.mock("@elgato/streamdeck", () => import("../test-support/fake-stream-deck"));
 // The real logger writes to a logs/ folder.
 vi.mock("../logging", () => import("../test-support/fake-logging"));
 
-// The real mouse module loads node-hid's native binary on import and talks to the receivers plugged in.
-vi.mock("../mouse", () => ({ switchHost: vi.fn() }));
+// The real host module reaches the mouse through `src/mouse.ts`, which loads node-hid's native binary on import and
+// talks to the receivers plugged in.
+vi.mock("../host", () => ({ switchHost: vi.fn() }));
 
 const SET_HOST = "com.daczarne.mx3s.set-host";
 
