@@ -10,15 +10,15 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { Battery } from "../battery";
-import { batteryImage, batterySvg, DEFAULT_BACKGROUND, DEFAULT_MOUSE } from "./battery-image";
+import { batteryImage, batterySvg, DEFAULT_BACKGROUND, DEFAULT_BOLT, DEFAULT_MOUSE } from "./battery-image";
 
 /** A reading of the battery, 95%, full and not charging unless given otherwise, as the mouse was measured. */
 function reading(battery: Partial<Battery> = {}): Battery {
   return { percentage: 95, level: "full", charging: false, ...battery };
 }
 
-// The default style: the charcoal tile, the filled white mouse, and the battery.
-const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true };
+// The default style: the charcoal tile, the filled white mouse, the battery, and the green bolt while charging.
+const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true, bolt: DEFAULT_BOLT };
 
 /** The colors an SVG uses, for its fills and strokes. */
 function colors(svg: string): Set<string> {
@@ -154,6 +154,67 @@ describe("its battery", () => {
     const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
     const all = placed(batterySvg(shown, TILE));
     expect(placed(without)).toEqual([all[0], ...all.slice(2)]);
+  });
+});
+
+describe("its bolt", () => {
+  const BOLT = 144 * 0.34;
+  const CUSTOM = { charging: "#123456", idle: "#654321" };
+
+  it.each([
+    ["always", true, "#123456"],
+    ["always", false, "#654321"],
+    ["charging", true, "#123456"],
+  ] as const)(
+    "shows when it's set to %s and the mouse is charging: %s, in its color for that",
+    (show, charging, color) => {
+      const svg = batterySvg({ battery: reading({ charging }), found: true }, { ...TILE, bolt: { show, ...CUSTOM } });
+
+      expect(svg).toContain(boltGlyph(BOLT, { color }));
+    },
+  );
+
+  it.each([
+    ["charging", false],
+    ["never", true],
+    ["never", false],
+  ] as const)("is left out when it's set to %s and the mouse is charging: %s", (show, charging) => {
+    const svg = batterySvg({ battery: reading({ charging }), found: true }, { ...TILE, bolt: { show, ...CUSTOM } });
+
+    expect(svg).not.toContain("stroke-linejoin");
+  });
+
+  it("shows always, as not charging, before the first reading", () => {
+    const svg = batterySvg({ battery: undefined, found: false }, { ...TILE, bolt: { show: "always", ...CUSTOM } });
+
+    expect(svg).toContain(boltGlyph(BOLT, { color: TILES.grey }));
+  });
+
+  it("turns grey with the rest of the key when the mouse isn't found, whatever its colors", () => {
+    const shown = { battery: reading({ charging: false }), found: false };
+
+    expect(batterySvg(shown, { ...TILE, bolt: { show: "always", ...CUSTOM } })).toContain(
+      boltGlyph(BOLT, { color: TILES.grey }),
+    );
+  });
+
+  it("is dim slate by default while the mouse doesn't charge, for a key that shows it always", () => {
+    const svg = batterySvg(
+      { battery: reading({ charging: false }), found: true },
+      { ...TILE, bolt: { ...DEFAULT_BOLT, show: "always" } },
+    );
+
+    expect(svg).toContain(boltGlyph(BOLT, { color: TILES.slate }));
+  });
+
+  it("is left out with the mouse, the battery and the percentage where they were", () => {
+    const shown = { battery: reading({ charging: true }), found: true };
+
+    const without = batterySvg(shown, { ...TILE, bolt: { ...DEFAULT_BOLT, show: "never" } });
+
+    const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
+    const all = placed(batterySvg(shown, TILE));
+    expect(placed(without)).toEqual([...all.slice(0, 2), ...all.slice(3)]);
   });
 });
 

@@ -82,6 +82,28 @@
         <sdpi-checkbox label="Follow battery level" default="true" disabled></sdpi-checkbox>
       </div>
     </sdpi-item>
+    <!-- The bolt at the right of the key's top row: shown always, only while the mouse charges, or never, which leaves
+         the others where they are. Its color while charging, the palette's green, and, for a key that shows it always,
+         its color while not, the palette's slate, dim on the charcoal tile. Follow battery level isn't built yet:
+         disabled, and with no setting, it saves nothing. -->
+    <sdpi-item label="Bolt icon">
+      <sdpi-radio setting="showBolt" default="charging" columns="3">
+        <option value="always">Always</option>
+        <option value="charging">Charging</option>
+        <option value="never">Never</option>
+      </sdpi-radio>
+    </sdpi-item>
+    <sdpi-item label="Charging">
+      <div class="row">
+        <sdpi-color setting="boltColor" default="#4CBF68"></sdpi-color>
+        <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
+      </div>
+    </sdpi-item>
+    <sdpi-item label="Not charging">
+      <div class="row">
+        <sdpi-color setting="boltIdleColor" default="#484C52"></sdpi-color>
+      </div>
+    </sdpi-item>
   </body>
 
 </html>
