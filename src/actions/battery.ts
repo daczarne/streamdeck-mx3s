@@ -187,8 +187,8 @@ function levelsOf(settings: JsonObject): Levels {
 /**
  * The bolt a key's settings choose: when it shows, from `showBolt`, and its colors while the mouse charges and while it
  * doesn't, from `boltColor` and `boltIdleColor`, or, while it charges, its level's, when `boltFollowsLevel` is checked.
- * A key that has chosen none yet shows it while the mouse charges, and
- * so does one whose choice isn't one, with a warning.
+ * A key that has chosen none yet shows it as the default does, and so does one whose choice isn't one, with a
+ * warning.
  */
 function boltOf(settings: JsonObject): BoltStyle {
   const charging = colorOf(settings, "boltColor", DEFAULT_BOLT.charging);
