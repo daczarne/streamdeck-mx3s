@@ -8,7 +8,7 @@ type Handler = (ev: never) => void | Promise<void>;
 type DeckAction = { readonly manifestId?: string | undefined };
 
 /** The handlers an action can have for the events the fake Deck sends. */
-type EventName = "onWillAppear" | "onDidReceiveSettings" | "onKeyDown";
+type EventName = "onWillAppear" | "onWillDisappear" | "onDidReceiveSettings" | "onKeyDown";
 
 /**
  * The Deck for the action's tests: it places keys for some actions, and sends each one's events to the action it
@@ -30,6 +30,11 @@ export class FakeDeck {
     this.settings.set(key.id, settings);
     await this.send(key, "onWillAppear", {});
     return key;
+  }
+
+  /** Takes a key off the Deck, as when the profile shown changes or the key is deleted. */
+  remove(key: FakeKey): Promise<void> {
+    return this.send(key, "onWillDisappear", {});
   }
 
   /** Presses a key. */

@@ -13,6 +13,7 @@ const LOGITECH = 0x046d;
 const BOLT_RECEIVER = 0xc548;
 export const MX_MASTER_3S = 0xb034;
 export const CHANGE_HOST = 0x1814;
+export const UNIFIED_BATTERY = 0x1004;
 
 const SHORT = 0x10;
 const LONG = 0x11;
@@ -58,6 +59,11 @@ export type PairedDevice = {
   hosts: number;
   // The host it's on, counted from 1 as on the mouse.
   current: number;
+  // UNIFIED_BATTERY's index on the device, or 0 for a device without it.
+  unifiedBattery: number;
+  // What UNIFIED_BATTERY's getStatus answers: the percentage, the level as one bit, the charging state and the
+  // external power.
+  battery: { percentage: number; level: number; charging: number; external: number };
 };
 
 // Each receiver gets its own paths, as node-hid lists them.
@@ -104,8 +110,8 @@ export class EmulatedReceiver {
   }
 
   /**
-   * Pairs a device in `slot`: by default the mouse, connected, on host 1 of 3, with CHANGE_HOST at index 10, as the
-   * MX Master 3S measured.
+   * Pairs a device in `slot`: by default the mouse, connected, on host 1 of 3, with CHANGE_HOST at index 10, and
+   * UNIFIED_BATTERY at index 8, at 95%, full, and not charging, as the MX Master 3S measured.
    */
   pair(slot: number, device: Partial<PairedDevice> = {}): PairedDevice {
     const paired: PairedDevice = {
@@ -115,6 +121,8 @@ export class EmulatedReceiver {
       changeHost: 10,
       hosts: 3,
       current: 1,
+      unifiedBattery: 8,
+      battery: { percentage: 95, level: 0x08, charging: 0x00, external: 0x00 },
       ...device,
     };
     this.slots.set(slot, paired);
@@ -205,12 +213,16 @@ export class EmulatedReceiver {
   }
 }
 
-/** A connected device's reply to a HID++ 2.0 request: IRoot's getFeature, or CHANGE_HOST's two functions. */
+/**
+ * A connected device's reply to a HID++ 2.0 request: IRoot's getFeature, CHANGE_HOST's two functions, or
+ * UNIFIED_BATTERY's getStatus.
+ */
 function featureReply(device: PairedDevice, slot: number, index: number, fnId: number, params: number[]) {
   const fn = fnId >> 4;
   if (index === 0 && fn === 0) {
     const id = ((params[0] ?? 0) << 8) + (params[1] ?? 0);
-    return long(slot, index, fnId, [id === CHANGE_HOST ? device.changeHost : 0]);
+    const found = id === CHANGE_HOST ? device.changeHost : id === UNIFIED_BATTERY ? device.unifiedBattery : 0;
+    return long(slot, index, fnId, [found]);
   }
   if (index !== 0 && index === device.changeHost && fn === 0) {
     return long(slot, index, fnId, [device.hosts, device.current - 1]);
@@ -223,6 +235,10 @@ function featureReply(device: PairedDevice, slot: number, index: number, fnId: n
       device.connected = false;
     }
     return undefined;
+  }
+  if (index !== 0 && index === device.unifiedBattery && fn === 1) {
+    const { percentage, level, charging, external } = device.battery;
+    return long(slot, index, fnId, [percentage, level, charging, external]);
   }
   return long(slot, ERROR_2_0, index, [fnId, INVALID_FUNCTION]);
 }

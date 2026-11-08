@@ -1,5 +1,6 @@
 import streamDeck from "@elgato/streamdeck";
 
+import { BatteryAction } from "./actions/battery";
 import { SetHostAction } from "./actions/set-host";
 import { logger } from "./logging";
 
@@ -10,6 +11,7 @@ streamDeck.logger.setLevel("info");
 logger.info("Plugin started");
 
 streamDeck.actions.registerAction(new SetHostAction());
+streamDeck.actions.registerAction(new BatteryAction());
 
 // Logged here rather than left to the SDK, which logs an unhandled rejection to its own files, not to mx3s.log.
 streamDeck.connect().catch((error: unknown) => {

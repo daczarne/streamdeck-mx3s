@@ -22,6 +22,7 @@ export function createFakeKey(manifestId: string) {
     manifestId,
     isKey: (): boolean => true,
     setTitle: vi.fn(async (_title?: string): Promise<void> => {}),
+    setImage: vi.fn(async (_image?: string): Promise<void> => {}),
     showAlert: vi.fn(async (): Promise<void> => {}),
     showOk: vi.fn(async (): Promise<void> => {}),
   };

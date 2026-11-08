@@ -1,0 +1,79 @@
+/**
+ * The Battery key's image, drawn afresh from each reading: the mouse, the battery and, while it charges, a bolt in a
+ * row across the top, and the percentage below them, on the palette's charcoal tile. Its colors follow the level the
+ * mouse puts its charge at, and turn grey once the mouse isn't found, keeping the last reading.
+ */
+import {
+  ACCENTS,
+  batteryGlyph,
+  boltGlyph,
+  mouseGlyph,
+  percentageGlyph,
+  svgDoc,
+  TILES,
+  WHITE,
+} from "@daczarne/streamdeck-icons";
+
+import type { Battery, Level } from "../battery";
+
+// The side of the image, in pixels: a key's at high density, which Stream Deck scales down for the others.
+const SIZE = 144;
+
+// Each glyph in the top row takes a square canvas a third of the key wide, `TOP` below its top edge, centered on a
+// third of the key. The percentage's canvas is the key's, moved `NUMBER_DROP` down, so the number sits under the row.
+const CELL = 0.34;
+const TOP = 0.03;
+const CENTERS = [0.17, 0.5, 0.83] as const;
+const NUMBER_DROP = 0.17;
+
+// The colors of each level, and of a key whose mouse isn't found.
+const LEVEL_COLORS: Record<Level, string> = {
+  full: ACCENTS.leaf,
+  good: ACCENTS.leaf,
+  low: ACCENTS.gold,
+  critical: ACCENTS.scarlet,
+};
+const NOT_FOUND = TILES.grey;
+
+// The percentages under which a battery counts as low, and as critical, when the mouse reports a level the plugin
+// doesn't know.
+const LOW_BELOW = 60;
+const CRITICAL_BELOW = 30;
+
+/** What the key shows: the last reading, if there was one, and whether the mouse answered the last read. */
+export type Shown = { battery: Battery | undefined; found: boolean };
+
+/** The key's image, as a data URL Stream Deck takes for `setImage`. */
+export function batteryImage(shown: Shown): string {
+  return `data:image/svg+xml;base64,${Buffer.from(batterySvg(shown)).toString("base64")}`;
+}
+
+/** The key's image, as an SVG document. */
+export function batterySvg({ battery, found }: Shown): string {
+  const color = found && battery !== undefined ? levelColor(battery) : NOT_FOUND;
+  const cell = SIZE * CELL;
+  const place = (center: number, glyph: string) =>
+    `<g transform="translate(${SIZE * center - cell / 2} ${SIZE * TOP})">${glyph}</g>`;
+  const parts = [
+    `<rect width="${SIZE}" height="${SIZE}" fill="${TILES.charcoal}"/>`,
+    place(CENTERS[0], mouseGlyph(cell, { color: found ? WHITE : NOT_FOUND, filled: true })),
+    place(
+      CENTERS[1],
+      batteryGlyph(cell, battery === undefined ? { color } : { charge: battery.percentage / 100, color }),
+    ),
+    battery?.charging === true ? place(CENTERS[2], boltGlyph(cell, { color: found ? ACCENTS.leaf : NOT_FOUND })) : "",
+    `<g transform="translate(0 ${SIZE * NUMBER_DROP})">${percentageGlyph(SIZE, battery === undefined ? { color } : { percentage: battery.percentage, color })}</g>`,
+  ];
+  return svgDoc(SIZE, parts.filter((part) => part !== "").join("\n"));
+}
+
+/** The color of a battery: its level's, or, for a level the plugin doesn't know, its percentage's. */
+function levelColor({ level, percentage }: Battery): string {
+  if (level !== undefined) {
+    return LEVEL_COLORS[level];
+  }
+  if (percentage < CRITICAL_BELOW) {
+    return ACCENTS.scarlet;
+  }
+  return percentage < LOW_BELOW ? ACCENTS.gold : ACCENTS.leaf;
+}
