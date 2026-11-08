@@ -17,6 +17,7 @@ import {
   receiverPaths,
   sendFeature,
 } from "./hidpp.mjs";
+import { log, start } from "./report.mjs";
 
 /** @import { HID as Device } from "node-hid" */
 
@@ -49,22 +50,22 @@ function findMouse(device) {
  * @returns {void}
  */
 function switchHost(device, { slot, changeHost }, target) {
-  console.log(`the MX Master 3S is in slot ${slot}`);
+  log(`the MX Master 3S is in slot ${slot}`);
   if (changeHost === 0) {
     throw new Error("the mouse has no CHANGE_HOST feature");
   }
   const { count, current } = hostInfo(device, slot, changeHost);
-  console.log(`hosts: ${count}, current: ${current}`);
+  log(`hosts: ${count}, current: ${current}`);
   if (target < 1 || target > count) {
     throw new Error(`the host has to be 1 to ${count}`);
   }
   if (target === current) {
-    console.log(`already on host ${target}: nothing to do`);
+    log(`already on host ${target}: nothing to do`);
     return;
   }
   // setCurrentHost, function 1, takes the host counted from 0.
   const sent = sendFeature(device, slot, changeHost, 1, [target - 1]);
-  console.log(`sent setCurrentHost(${target - 1}): ${hex(sent)}`);
+  log(`sent setCurrentHost(${target - 1}): ${hex(sent)}`);
 }
 
 const target = Number(process.argv[2]);
@@ -72,6 +73,7 @@ if (!Number.isInteger(target)) {
   console.log("usage: node scripts/probes/switch-host.mjs <host>");
   process.exit(1);
 }
+start();
 let reached = false;
 try {
   for (const path of receiverPaths()) {
@@ -88,10 +90,10 @@ try {
     }
   }
   if (!reached) {
-    console.log("no receiver reaches the MX Master 3S right now");
+    log("no receiver reaches the MX Master 3S right now");
     process.exitCode = 1;
   }
 } catch (error) {
-  console.log(`error: ${error instanceof Error ? error.message : String(error)}`);
+  log(`error: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 }

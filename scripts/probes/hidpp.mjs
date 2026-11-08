@@ -77,9 +77,24 @@ export function openReceiver(path) {
   return new HID.HID(path);
 }
 
+/** An error reply from the receiver or a device, which it keeps, so a probe can read its error code. */
+export class HidppError extends Error {
+  /**
+   * An error for the error reply `reply` to `report`.
+   *
+   * @param {number[]} report
+   * @param {number[]} reply
+   */
+  constructor(report, reply) {
+    super(`HID++ error ${hex(reply.slice(0, 7))} for ${hex(report)}`);
+    /** @type {number[]} */
+    this.reply = reply;
+  }
+}
+
 /**
- * Sends a short report and waits for the reply `isReply` accepts. It throws on an error reply that `isError` accepts,
- * and when no reply comes in time. Any other report, such as a notification, is skipped.
+ * Sends a short report and waits for the reply `isReply` accepts. It throws a {@link HidppError} on an error reply that
+ * `isError` accepts, and an `Error` when no reply comes in time. Any other report, such as a notification, is skipped.
  *
  * @param {Device} device
  * @param {number[]} report
@@ -99,7 +114,7 @@ function request(device, report, isReply, isError) {
       return reply;
     }
     if (isError(reply)) {
-      throw new Error(`HID++ error ${hex(reply.slice(0, 7))} for ${hex(report)}`);
+      throw new HidppError(report, reply);
     }
   }
   throw new Error(`no reply to ${hex(report)}`);
@@ -173,7 +188,7 @@ export function setNotificationFlags(device, flags) {
  * @param {number[]} [params]
  * @returns {number[]}
  */
-function callFeature(device, slot, index, fn, params = []) {
+export function callFeature(device, slot, index, fn, params = []) {
   const fnId = (fn << 4) | SOFTWARE_ID;
   return request(
     device,
@@ -212,7 +227,7 @@ export function pairedCount(device) {
 
 /**
  * The receiver's paired devices, by slot, with each one's product ID, from its pairing information register. It holds
- * the device's serial number too, which the probes never print.
+ * the device's serial number too, which the probes never log.
  *
  * @param {Device} device
  * @returns {{ slot: number, productId: number }[]}

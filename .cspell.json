@@ -8,6 +8,7 @@
     "com.daczarne.mx3s.sdPlugin/node_modules/**",
     "com.daczarne.mx3s.sdPlugin/**/vendor/**",
     "node_modules/**",
+    "scripts/probes/out/**",
   ],
   "ignoreWords": [ ],
   "words": [
