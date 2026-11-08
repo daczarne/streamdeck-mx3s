@@ -16,7 +16,7 @@ There's no schedule. A release is made when what has been merged since the last 
 
 ## The version
 
-The version is the `Version` in `com.daczarne.mx3s.sdPlugin/manifest.json`, the only place it's written. Elgato's format has four numbers, `{major}.{minor}.{patch}.{build}`, and the last one stays 0. The release's tag, and the version users see, is the first three, as `v{major}.{minor}.{patch}`.
+The version is the `Version` in `com.daczarne.mx3s.sdPlugin/manifest.json`. The bug report template shows the latest release's as an example, so it's written there too (see [the branch that raises it](#1-a-branch-that-raises-the-version)). Elgato's format has four numbers, `{major}.{minor}.{patch}.{build}`, and the last one stays 0. The release's tag, and the version users see, is the first three, as `v{major}.{minor}.{patch}`.
 
 Releases follow [semantic versioning][semver], where a breaking change is one that breaks keys already set up, such as a renamed action or a setting whose meaning changes. Before 1.0, a release that adds or changes what the plugin does raises the minor, breaking changes included, and one that only fixes something raises the patch.
 
@@ -24,7 +24,12 @@ Releases follow [semantic versioning][semver], where a breaking change is one th
 
 ### 1. A branch that raises the version
 
-The branch raises `Version` in `manifest.json`, which CI reads. It also checks `.github/release-notes.md`, which is the same for every release, against what the release changes:
+The version is written in two files, which the branch raises together:
+
+- `Version` in `manifest.json`, the version itself, which CI reads.
+- The placeholder of the plugin version field, in `.github/ISSUE_TEMPLATE/bug_report.yaml`, so a reporter sees the latest release as an example of what to fill in.
+
+The branch also checks `.github/release-notes.md`, which is the same for every release, against what the release changes:
 
 - What the plugin needs, Stream Deck 7.1 or later on macOS 12 or later or Windows 10 or later, matches the minimum versions of `Software` and `OS` in `manifest.json`.
 - What it says is supported and checked, such as the mouse, its connection and the systems, is still true.
