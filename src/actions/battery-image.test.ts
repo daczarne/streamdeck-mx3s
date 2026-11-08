@@ -44,10 +44,10 @@ function colors(svg: string): Set<string> {
 describe("batterySvg", () => {
   it.each([
     [100, ACCENTS.leaf],
-    [60, ACCENTS.leaf],
-    [59, ACCENTS.gold],
-    [30, ACCENTS.gold],
-    [29, ACCENTS.scarlet],
+    [40, ACCENTS.leaf],
+    [39, ACCENTS.gold],
+    [15, ACCENTS.gold],
+    [14, ACCENTS.scarlet],
     [0, ACCENTS.scarlet],
   ])("colors a battery at %s%%, and its percentage, by the default levels", (percentage, color) => {
     const svg = batterySvg({ battery: reading({ percentage }), found: true }, TILE);
@@ -56,9 +56,9 @@ describe("batterySvg", () => {
   });
 
   it.each([
-    ["full", 20, ACCENTS.scarlet],
+    ["full", 10, ACCENTS.scarlet],
     ["critical", 95, ACCENTS.leaf],
-    [undefined, 45, ACCENTS.gold],
+    [undefined, 35, ACCENTS.gold],
   ] as const)("colors a battery the mouse puts at %s by its percentage, %s%%", (level, percentage, color) => {
     const svg = batterySvg({ battery: reading({ level, percentage }), found: true }, TILE);
 
@@ -104,10 +104,10 @@ describe("batterySvg", () => {
   });
 
   it("draws the percentage, and the battery filled as far", () => {
-    const svg = batterySvg({ battery: reading({ percentage: 42 }), found: true }, TILE);
+    const svg = batterySvg({ battery: reading({ percentage: 35 }), found: true }, TILE);
 
-    expect(svg).toContain(percentageGlyph(144, { percentage: 42, color: ACCENTS.gold }));
-    expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.42, color: ACCENTS.gold }));
+    expect(svg).toContain(percentageGlyph(144, { percentage: 35, color: ACCENTS.gold }));
+    expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.35, color: ACCENTS.gold }));
   });
 
   it("draws a green bolt only while the mouse is charging, whatever its level", () => {

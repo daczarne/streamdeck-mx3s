@@ -45,14 +45,14 @@ export const DEFAULT_MOUSE: MouseStyle = { color: WHITE, filled: true };
 export const DEFAULT_BOLT: BoltStyle = { show: "charging", charging: ACCENTS.leaf, idle: TILES.slate };
 
 /**
- * The levels a key colors a battery by unless it chooses others: medium, in the palette's gold, between 30% and 60%,
+ * The levels a key colors a battery by unless it chooses others: medium, in the palette's gold, between 15% and 40%,
  * high, in its green, above, and low, in its scarlet, below.
  */
 export const DEFAULT_LEVELS: Levels = {
   high: ACCENTS.leaf,
   medium: ACCENTS.gold,
-  mediumFrom: 30,
-  mediumTo: 60,
+  mediumFrom: 15,
+  mediumTo: 40,
   low: ACCENTS.scarlet,
 };
 

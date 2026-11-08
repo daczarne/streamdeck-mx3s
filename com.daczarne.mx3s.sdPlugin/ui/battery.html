@@ -168,7 +168,7 @@
     </section>
 
     <!-- The levels the battery and the percentage take their colors from, by the percentage the mouse reports: medium,
-         the palette's gold, between 30% and 60%, high, its green, above, and low, its scarlet, below. Medium's two
+         the palette's gold, between 15% and 40%, high, its green, above, and low, its scarlet, below. Medium's two
          percentages go in either order, and high's and low's are the higher and the lower of them, which battery.js
          writes out. -->
     <section>
@@ -176,13 +176,13 @@
       <sdpi-item label="High">
         <div class="row">
           <sdpi-color setting="highColor" default="#4CBF68"></sdpi-color>
-          <span class="note" id="high-from">from 60%</span>
+          <span class="note" id="high-from">from 40%</span>
         </div>
       </sdpi-item>
       <sdpi-item label="Medium">
         <div class="row levels">
           <sdpi-color setting="mediumColor" default="#F5C542"></sdpi-color>
-          <sdpi-select setting="mediumFrom" default="30" value-type="number">
+          <sdpi-select setting="mediumFrom" default="15" value-type="number">
             <option value="95">95%</option>
             <option value="90">90%</option>
             <option value="85">85%</option>
@@ -204,7 +204,7 @@
             <option value="5">5%</option>
           </sdpi-select>
           <span class="note">to</span>
-          <sdpi-select setting="mediumTo" default="60" value-type="number">
+          <sdpi-select setting="mediumTo" default="40" value-type="number">
             <option value="95">95%</option>
             <option value="90">90%</option>
             <option value="85">85%</option>
@@ -230,7 +230,7 @@
       <sdpi-item label="Low">
         <div class="row">
           <sdpi-color setting="lowColor" default="#E8584F"></sdpi-color>
-          <span class="note" id="low-below">below 30%</span>
+          <span class="note" id="low-below">below 15%</span>
         </div>
       </sdpi-item>
       <sdpi-item>
