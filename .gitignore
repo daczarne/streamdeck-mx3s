@@ -11,3 +11,6 @@ release/
 # Local files
 .DS_Store
 .git/
+
+# Probe results
+scripts/probes/out/*.txt

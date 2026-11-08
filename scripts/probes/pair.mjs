@@ -2,8 +2,9 @@
 /**
  * Pairs a device in pairing mode, such as the mouse on one of its Easy-Switch channels, with the Logi Bolt receiver
  * that has nothing paired yet. It refuses to touch a receiver that already has a device, so a receiver in use stays as
- * it is. It prints every notification the receiver sends, with the device's address masked, so a pairing that goes
- * differently from what's expected shows how.
+ * it is. It logs every notification the receiver sends, with the device's address masked, so a pairing that goes
+ * differently from what's expected shows how. The notifications go only to the run's file. Everything else it logs
+ * shows on the terminal too, since it says what to do on the mouse, such as the clicks that enter the passkey.
  *
  * The messages follow Solaar's Bolt pairing. The receiver reports what it finds only with its wireless notifications
  * on, so the probe turns them on first, and puts the receiver's flags back as they were at the end. Then it starts a
@@ -20,6 +21,7 @@ import {
   setNotificationFlags,
   writeRegister,
 } from "./hidpp.mjs";
+import { log, start, tell } from "./report.mjs";
 
 /** @import { HID as Device } from "node-hid" */
 
@@ -76,12 +78,12 @@ function emptyReceiver() {
   for (const { device } of empty) {
     device.close();
   }
-  console.log(`expected exactly one receiver with nothing paired, found ${empty.length}: nothing done`);
+  tell(`expected exactly one receiver with nothing paired, found ${empty.length}: nothing done`);
   return undefined;
 }
 
 /**
- * A report as printed: in hex, with the device's address masked wherever it appears, since it identifies the device.
+ * A report as logged: in hex, with the device's address masked wherever it appears, since it identifies the device.
  * The pairing, passkey and click notifications all repeat it, each at a place of its own.
  *
  * @param {number[]} report
@@ -142,18 +144,18 @@ function pair(device, found) {
     report.push(0);
   }
   device.write(report);
-  console.log("asked the receiver to pair with it");
+  tell("asked the receiver to pair with it");
 }
 
 /**
- * Runs the discovery, and the pairing of the first device it finds, printing what the receiver reports.
+ * Runs the discovery, and the pairing of the first device it finds, logging what the receiver reports.
  *
  * @param {Device} device
  * @returns {void}
  */
 function discoverAndPair(device) {
   writeRegister(device, DISCOVERY, [DISCOVERY_S, 0x01]);
-  console.log(`discovering for ${DISCOVERY_S} s: the device has to be in pairing mode`);
+  tell(`discovering for ${DISCOVERY_S} s: the device has to be in pairing mode`);
   /** @type {Found | undefined} */
   let found;
   /** @type {string[]} */
@@ -166,81 +168,80 @@ function discoverAndPair(device) {
       continue;
     }
     const [sub, address] = [report[2], report[3] ?? 0];
-    // The device's details come first, so its address is known before any report that repeats it is printed.
+    // The device's details come first, so its address is known before any report that repeats it is logged.
     const details = sub === DEVICE_DISCOVERY && report[5] === DEVICE_DETAILS && !found;
     if (details) {
       found = { kind: report[7] ?? 0, address: report.slice(10, 16), authentication: report[18] ?? 0 };
     }
-    console.log(`  ${shown(report, found?.address)}`);
+    log(`  ${shown(report, found?.address)}`);
     if (sub === DISCOVERY_STATUS) {
-      console.log(address === 0 ? "discovery started" : `discovery stopped (0x${(report[4] ?? 0).toString(16)})`);
+      tell(address === 0 ? "discovery started" : `discovery stopped (0x${(report[4] ?? 0).toString(16)})`);
       if (address !== 0 && !found) {
         return;
       }
     } else if (sub === DEVICE_DISCOVERY) {
       if (details && found) {
-        console.log(
+        tell(
           `found a device: kind 0x${found.kind.toString(16)}, authentication 0x${found.authentication.toString(16)}`,
         );
         pair(device, found);
       } else if (report[5] === DEVICE_NAME) {
-        console.log(`its name: "${Buffer.from(report.slice(7, 7 + (report[6] ?? 0))).toString("utf8")}"`);
+        tell(`its name: "${Buffer.from(report.slice(7, 7 + (report[6] ?? 0))).toString("utf8")}"`);
       }
     } else if (sub === PASSKEY_REQUEST) {
       const passkey = Buffer.from(report.slice(4, 10)).toString("ascii");
       sequence = clicks(passkey);
       done = 0;
-      console.log(`passkey ${passkey}: on the mouse, click in this order, then press both buttons together:`);
+      tell(`passkey ${passkey}: on the mouse, click in this order, then press both buttons together:`);
       sequence.forEach((click, i) => {
-        console.log(`    ${i + 1}. ${click}`);
+        tell(`    ${i + 1}. ${click}`);
       });
-      console.log(`>>> next: ${nextPress(sequence, done)}`);
+      tell(`>>> next: ${nextPress(sequence, done)}`);
     } else if (sub === PASSKEY_PRESSED) {
       if (address === CLICK) {
         done += 1;
-        console.log(`done: click ${done} (${sequence[done - 1] ?? "?"})`);
-        console.log(`>>> next: ${nextPress(sequence, done)}`);
+        tell(`done: click ${done} (${sequence[done - 1] ?? "?"})`);
+        tell(`>>> next: ${nextPress(sequence, done)}`);
       } else if (address === ENTRY_STARTED) {
-        console.log("passkey entry started");
+        tell("passkey entry started");
       } else if (address === ENTRY_DONE) {
-        console.log("done: both buttons, passkey entered");
+        tell("done: both buttons, passkey entered");
       } else {
-        console.log(`passkey entry: 0x${address.toString(16)}`);
+        tell(`passkey entry: 0x${address.toString(16)}`);
       }
     } else if (sub === PAIRING_STATUS) {
       if (address === 0) {
-        console.log("pairing started");
+        tell("pairing started");
       } else {
         const error = report[4] ?? 0;
-        console.log(
-          error === 0 ? `pairing finished, in slot ${report[11]}` : `pairing failed: 0x${error.toString(16)}`,
-        );
+        tell(error === 0 ? `pairing finished, in slot ${report[11]}` : `pairing failed: 0x${error.toString(16)}`);
         return;
       }
     }
   }
-  console.log("the receiver reported no end to the pairing in time");
+  tell("the receiver reported no end to the pairing in time");
 }
 
+start();
 const receiver = emptyReceiver();
 if (!receiver) {
   process.exit(1);
 }
 const { path, device } = receiver;
-console.log(`pairing with the receiver at ${path}, which has nothing paired`);
+tell(`pairing with the receiver at ${path}, which has nothing paired`);
 const flags = notificationFlags(device);
 try {
   setNotificationFlags(device, [flags[0] ?? 0, (flags[1] ?? 0) | WIRELESS, flags[2] ?? 0]);
-  console.log(`notification flags ${hex(flags)}, wireless turned on`);
+  tell(`notification flags ${hex(flags)}, wireless turned on`);
   discoverAndPair(device);
-  console.log(`paired devices now: ${pairedCount(device)}`);
+  tell(`paired devices now: ${pairedCount(device)}`);
 } catch (error) {
-  console.log(`error: ${error instanceof Error ? error.message : String(error)}`);
+  tell(`error: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 } finally {
   try {
     setNotificationFlags(device, flags);
-    console.log(`notification flags back to ${hex(flags)}`);
+    tell(`notification flags back to ${hex(flags)}`);
   } finally {
     device.close();
   }
