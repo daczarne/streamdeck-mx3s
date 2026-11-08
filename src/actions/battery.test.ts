@@ -300,6 +300,21 @@ describe("the settings page", () => {
     expect(headings).toEqual(["Background", "Mouse icon", "Battery icon", "Bolt icon"]);
   });
 
+  it("greys out only controls the page has, following switches it has", () => {
+    const script = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.js", "utf8");
+    const dependents = [...script.matchAll(/'(sdpi-[a-z]+)\[setting="([A-Za-z]+)"\]'/g)];
+    const switches = /const SWITCHES = \[([^\]]+)\]/.exec(script)?.[1]?.match(/[A-Za-z]+/g) ?? [];
+
+    expect(dependents.length).toBeGreaterThan(0);
+    for (const [, element, setting] of dependents) {
+      expect(page).toContain(`<${element} setting="${setting}"`);
+    }
+    expect(switches).toEqual(["noBackground", "showMouse", "showBolt"]);
+    for (const setting of switches) {
+      expect(page).toContain(`setting="${setting}"`);
+    }
+  });
+
   it("ends each section with a Reset button, after every setting it resets", () => {
     for (const body of sections) {
       expect(body.match(/<sdpi-button class="reset">Reset<\/sdpi-button>/g)).toHaveLength(1);
