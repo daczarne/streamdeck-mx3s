@@ -18,15 +18,23 @@
     />
     <script src="vendor/sdpi-components.js"></script>
     <style>
-      /* The color picker, narrow, with None beside it on the same row. */
-      .background {
+      /* A row of controls side by side: a narrow color picker or a checkbox, with the controls that go with it. */
+      .row {
         display: flex;
         align-items: center;
         gap: 12px;
       }
 
-      .background sdpi-color {
+      .row sdpi-color {
         flex: 0 0 72px;
+      }
+
+      /* Radio buttons in a row sit at its right end, apart from the checkbox at its left. Their columns are shares of
+         their width, so they get one, just enough for two options side by side: without it, they shrink to their
+         widest option, and stack. */
+      .row sdpi-radio {
+        flex: 0 0 150px;
+        margin-left: auto;
       }
     </style>
   </head>
@@ -36,9 +44,28 @@
          the key black behind the image. A checkbox that starts unchecked has no default, since `default="false"`
          would check it. -->
     <sdpi-item label="Background">
-      <div class="background">
+      <div class="row">
         <sdpi-color setting="background" default="#2B2E33"></sdpi-color>
         <sdpi-checkbox setting="noBackground" label="None"></sdpi-checkbox>
+      </div>
+    </sdpi-item>
+    <!-- The mouse in the key's top row: shown, or not, which leaves the battery and the bolt where they are, filled or
+         outlined, and under them, its color, the palette's white until another is picked. A checkbox's `default` is
+         text, which checks it whatever it says, so Show starts checked. -->
+    <sdpi-item label="Mouse icon">
+      <div class="row">
+        <sdpi-checkbox setting="showMouse" default="true" label="Show"></sdpi-checkbox>
+        <sdpi-radio setting="mouseStyle" default="filled" columns="2">
+          <option value="filled">Filled</option>
+          <option value="outlined">Outlined</option>
+        </sdpi-radio>
+      </div>
+    </sdpi-item>
+    <!-- Follow battery level isn't built yet: disabled, and with no setting, it saves nothing. -->
+    <sdpi-item>
+      <div class="row">
+        <sdpi-color setting="mouseColor" default="#F2F2F2"></sdpi-color>
+        <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
       </div>
     </sdpi-item>
   </body>

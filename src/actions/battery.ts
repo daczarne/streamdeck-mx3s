@@ -11,7 +11,7 @@ import type { JsonObject, JsonValue } from "@elgato/utils";
 
 import { type Battery, readBattery } from "../battery";
 import { logger as pluginLogger } from "../logging";
-import { batteryImage, DEFAULT_BACKGROUND, type Style } from "./battery-image";
+import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_MOUSE, type MouseStyle, type Style } from "./battery-image";
 
 const logger = pluginLogger.createScope("Battery key");
 
@@ -29,7 +29,7 @@ type Shown = { key: KeyAction<JsonObject>; style: Style };
  * redrawing its image from each reading. Every key shows the same reading, since there's one mouse. The battery is read
  * when a key appears, when one is pressed, and every {@link REFRESH_MS} while one is shown. A mouse that doesn't answer,
  * such as one on another host, greys the key out, keeping the last reading. Each key draws it on the background its
- * settings choose.
+ * settings choose, with the mouse they choose.
  */
 @action({ UUID: "com.daczarne.mx3s.battery" })
 export class BatteryAction extends SingletonAction {
@@ -107,22 +107,50 @@ export class BatteryAction extends SingletonAction {
   }
 }
 
-/**
- * The style a key's settings choose: no background when `noBackground` is checked, and otherwise the color
- * `background` holds. A key that has none yet takes the default, and so does one whose color isn't one, with a
- * warning.
- */
+/** The style a key's settings choose: its background, and its mouse. */
 export function styleOf(settings: JsonObject): Style {
-  if (settings.noBackground === true) {
-    return { background: undefined };
+  return { background: backgroundOf(settings), mouse: mouseOf(settings) };
+}
+
+/**
+ * The background a key's settings choose: none when `noBackground` is checked, and otherwise the color `background`
+ * holds.
+ */
+function backgroundOf(settings: JsonObject): string | undefined {
+  return settings.noBackground === true ? undefined : colorOf(settings, "background", DEFAULT_BACKGROUND);
+}
+
+/**
+ * The mouse a key's settings choose: none when `showMouse` is unchecked, and otherwise the color `mouseColor` holds,
+ * filled unless `mouseStyle` is `outlined`. A key that has chosen no style yet takes the default, and so does one whose
+ * style isn't one, with a warning.
+ */
+function mouseOf(settings: JsonObject): MouseStyle | undefined {
+  if (settings.showMouse === false) {
+    return undefined;
   }
-  const value: JsonValue | undefined = settings.background;
+  const color = colorOf(settings, "mouseColor", DEFAULT_MOUSE.color);
+  const style: JsonValue | undefined = settings.mouseStyle;
+  if (style === undefined || style === "filled" || style === "outlined") {
+    return { color, filled: style === undefined ? DEFAULT_MOUSE.filled : style === "filled" };
+  }
+  const fallback = DEFAULT_MOUSE.filled ? "filled" : "outlined";
+  logger.warn(`Setting mouseStyle is ${JSON.stringify(style)}, not filled or outlined: using ${fallback}`);
+  return { color, filled: DEFAULT_MOUSE.filled };
+}
+
+/**
+ * The color a key's setting `setting` holds. A key that has none yet takes `fallback`, and so does one whose setting
+ * isn't a color, with a warning.
+ */
+function colorOf(settings: JsonObject, setting: string, fallback: string): string {
+  const value: JsonValue | undefined = settings[setting];
   if (value === undefined) {
-    return { background: DEFAULT_BACKGROUND };
+    return fallback;
   }
   if (typeof value === "string" && COLOR.test(value)) {
-    return { background: value };
+    return value;
   }
-  logger.warn(`Setting background is ${JSON.stringify(value)}, not a color: using ${DEFAULT_BACKGROUND}`);
-  return { background: DEFAULT_BACKGROUND };
+  logger.warn(`Setting ${setting} is ${JSON.stringify(value)}, not a color: using ${fallback}`);
+  return fallback;
 }

@@ -6,7 +6,7 @@ import { type Battery, type BatteryResult, readBattery } from "../battery";
 import { logger } from "../logging";
 import { FakeDeck } from "../test-support/fake-deck";
 import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
-import { batteryImage, DEFAULT_BACKGROUND } from "./battery-image";
+import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_MOUSE } from "./battery-image";
 
 //* Fakes
 
@@ -24,8 +24,8 @@ const BATTERY = "com.daczarne.mx3s.battery";
 const FULL: Battery = { percentage: 95, level: "full", charging: false };
 const LOW: Battery = { percentage: 20, level: "low", charging: true };
 
-// The style of a key that hasn't chosen one: the charcoal tile.
-const TILE = { background: DEFAULT_BACKGROUND };
+// The style of a key that hasn't chosen one: the charcoal tile, and the filled white mouse.
+const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE };
 
 let deck: FakeDeck;
 
@@ -161,14 +161,14 @@ describe("BatteryAction", () => {
 
   describe("its background", () => {
     it("draws a key on the background its settings choose, or none", async () => {
-      const colored = await deck.key(BATTERY, { background: "#123456" });
+      const colored = await deck.key(BATTERY, { background: "#123456", mouse: DEFAULT_MOUSE });
       const bare = await deck.key(BATTERY, { background: "#123456", noBackground: true });
 
       expect(colored.setImage).toHaveBeenLastCalledWith(
-        batteryImage({ battery: FULL, found: true }, { background: "#123456" }),
+        batteryImage({ battery: FULL, found: true }, { background: "#123456", mouse: DEFAULT_MOUSE }),
       );
       expect(bare.setImage).toHaveBeenLastCalledWith(
-        batteryImage({ battery: FULL, found: true }, { background: undefined }),
+        batteryImage({ battery: FULL, found: true }, { background: undefined, mouse: DEFAULT_MOUSE }),
       );
     });
 
@@ -181,20 +181,20 @@ describe("BatteryAction", () => {
       await deck.changeSettings(changed, { noBackground: true });
 
       expect(changed.setImage).toHaveBeenLastCalledWith(
-        batteryImage({ battery: FULL, found: true }, { background: undefined }),
+        batteryImage({ battery: FULL, found: true }, { background: undefined, mouse: DEFAULT_MOUSE }),
       );
       expect(other.setImage).not.toHaveBeenCalled();
       expect(readBattery).not.toHaveBeenCalled();
     });
 
     it("keeps each key's background through the readings that follow", async () => {
-      const key = await deck.key(BATTERY, { background: "#123456" });
+      const key = await deck.key(BATTERY, { background: "#123456", mouse: DEFAULT_MOUSE });
       readsGive({ ok: true, battery: LOW });
 
       await deck.press(key);
 
       expect(key.setImage).toHaveBeenLastCalledWith(
-        batteryImage({ battery: LOW, found: true }, { background: "#123456" }),
+        batteryImage({ battery: LOW, found: true }, { background: "#123456", mouse: DEFAULT_MOUSE }),
       );
     });
   });
@@ -207,19 +207,46 @@ describe("styleOf", () => {
     ["no background", { background: "#a1b2c3", noBackground: true }, undefined],
     ["no background unchecked", { background: "#a1b2c3", noBackground: false }, "#a1b2c3"],
   ])("takes %s", (_case, settings, background) => {
-    expect(styleOf(settings)).toEqual({ background });
+    expect(styleOf(settings)).toEqual({ background, mouse: DEFAULT_MOUSE });
   });
 
-  it("takes the default the settings page shows for a key that hasn't chosen yet", () => {
+  it.each([
+    ["a mouse color", { mouseColor: "#a1b2c3" }, { color: "#a1b2c3", filled: true }],
+    ["an outlined mouse", { mouseStyle: "outlined" }, { color: DEFAULT_MOUSE.color, filled: false }],
+    ["a filled mouse", { mouseStyle: "filled" }, { color: DEFAULT_MOUSE.color, filled: true }],
+    ["no mouse", { mouseColor: "#a1b2c3", showMouse: false }, undefined],
+    ["the mouse shown", { showMouse: true }, DEFAULT_MOUSE],
+  ])("takes %s", (_case, settings, mouse) => {
+    expect(styleOf(settings)).toEqual({ background: DEFAULT_BACKGROUND, mouse });
+  });
+
+  it("takes the default mouse color and style, with a warning, for a setting that isn't one", () => {
+    expect(styleOf({ mouseColor: "white", mouseStyle: "dotted" })).toEqual({
+      background: DEFAULT_BACKGROUND,
+      mouse: DEFAULT_MOUSE,
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      `Setting mouseColor is "white", not a color: using ${DEFAULT_MOUSE.color}`,
+    );
+    expect(logger.warn).toHaveBeenCalledWith('Setting mouseStyle is "dotted", not filled or outlined: using filled');
+  });
+
+  it("takes the defaults the settings page shows for a key that hasn't chosen yet", () => {
     const page = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.html", "utf8");
+    const color = (setting: string) =>
+      new RegExp(`<sdpi-color setting="${setting}" default="(#[0-9A-Fa-f]{6})">`).exec(page)?.[1]?.toUpperCase();
 
-    const shown = /<sdpi-color setting="background" default="(#[0-9A-Fa-f]{6})">/.exec(page)?.[1];
-
-    expect(shown?.toUpperCase()).toBe(DEFAULT_BACKGROUND.toUpperCase());
+    expect(color("background")).toBe(DEFAULT_BACKGROUND.toUpperCase());
+    expect(color("mouseColor")).toBe(DEFAULT_MOUSE.color.toUpperCase());
+    expect(/<sdpi-radio setting="mouseStyle" default="([a-z]+)"/.exec(page)?.[1]).toBe(
+      DEFAULT_MOUSE.filled ? "filled" : "outlined",
+    );
+    // A checkbox's default checks it whatever it says, so the mouse shown by default is a checkbox with one.
+    expect(page).toContain('<sdpi-checkbox setting="showMouse" default="true" label="Show">');
   });
 
   it.each([["red"], ["#12345"], ["#1234567"], [42]])("takes the default, with a warning, for %s", (value) => {
-    expect(styleOf({ background: value })).toEqual({ background: DEFAULT_BACKGROUND });
+    expect(styleOf({ background: value })).toEqual({ background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE });
     expect(logger.warn).toHaveBeenCalledWith(
       `Setting background is ${JSON.stringify(value)}, not a color: using ${DEFAULT_BACKGROUND}`,
     );

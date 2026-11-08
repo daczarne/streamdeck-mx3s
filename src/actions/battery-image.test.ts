@@ -1,16 +1,24 @@
-import { ACCENTS, batteryGlyph, boltGlyph, percentageGlyph, TILES, WHITE } from "@daczarne/streamdeck-icons";
+import {
+  ACCENTS,
+  batteryGlyph,
+  boltGlyph,
+  mouseGlyph,
+  percentageGlyph,
+  TILES,
+  WHITE,
+} from "@daczarne/streamdeck-icons";
 import { describe, expect, it } from "vitest";
 
 import type { Battery } from "../battery";
-import { batteryImage, batterySvg, DEFAULT_BACKGROUND } from "./battery-image";
+import { batteryImage, batterySvg, DEFAULT_BACKGROUND, DEFAULT_MOUSE } from "./battery-image";
 
 /** A reading of the battery, 95%, full and not charging unless given otherwise, as the mouse was measured. */
 function reading(battery: Partial<Battery> = {}): Battery {
   return { percentage: 95, level: "full", charging: false, ...battery };
 }
 
-// The default style: the charcoal tile.
-const TILE = { background: DEFAULT_BACKGROUND };
+// The default style: the charcoal tile, and the filled white mouse.
+const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE };
 
 /** The colors an SVG uses, for its fills and strokes. */
 function colors(svg: string): Set<string> {
@@ -84,17 +92,54 @@ describe("its background", () => {
   });
 
   it("is the color the key chooses", () => {
-    const svg = batterySvg({ battery: reading(), found: true }, { background: "#123456" });
+    const svg = batterySvg({ battery: reading(), found: true }, { background: "#123456", mouse: DEFAULT_MOUSE });
 
     expect(svg).toContain(`<rect width="144" height="144" fill="#123456"/>`);
     expect(colors(svg)).not.toContain(TILES.charcoal);
   });
 
   it("is left out when the key chooses none, so the image is transparent", () => {
-    const svg = batterySvg({ battery: reading(), found: true }, { background: undefined });
+    const svg = batterySvg({ battery: reading(), found: true }, { background: undefined, mouse: DEFAULT_MOUSE });
 
     expect(svg).not.toContain("<rect");
     expect(colors(svg)).toEqual(new Set([WHITE, ACCENTS.leaf]));
+  });
+});
+
+describe("its mouse", () => {
+  it("is filled and white by default", () => {
+    expect(batterySvg({ battery: reading(), found: true }, TILE)).toContain(
+      mouseGlyph(144 * 0.34, { color: WHITE, filled: true }),
+    );
+  });
+
+  it("takes the color and the style the key chooses", () => {
+    const svg = batterySvg(
+      { battery: reading(), found: true },
+      { ...TILE, mouse: { color: "#123456", filled: false } },
+    );
+
+    expect(svg).toContain(mouseGlyph(144 * 0.34, { color: "#123456", filled: false }));
+    expect(colors(svg)).not.toContain(WHITE);
+  });
+
+  it("turns grey with the rest of the key when the mouse isn't found, whatever its color", () => {
+    const svg = batterySvg(
+      { battery: reading(), found: false },
+      { ...TILE, mouse: { color: "#123456", filled: false } },
+    );
+
+    expect(svg).toContain(mouseGlyph(144 * 0.34, { color: TILES.grey, filled: false }));
+  });
+
+  it("is left out when the key chooses none, with the battery and the bolt where they were", () => {
+    const shown = { battery: reading({ charging: true }), found: true };
+
+    const without = batterySvg(shown, { ...TILE, mouse: undefined });
+
+    expect(colors(without)).toEqual(new Set([TILES.charcoal, ACCENTS.leaf]));
+    const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
+    expect(placed(without)).toEqual(placed(batterySvg(shown, TILE)).slice(1));
   });
 });
 
