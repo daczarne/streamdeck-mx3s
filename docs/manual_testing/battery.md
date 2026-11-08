@@ -4,7 +4,7 @@
 - [Setup](#setup)
 - [Checks](#checks)
 
-The unit tests check against emulated receivers how the plugin reads the battery, through which feature and with which request, and what it makes of each level and charging state. They also check against a fake Stream Deck which image each reading draws on the keys, that a press and the 10-minute timer read the battery again, that the timer stops once no key is shown, and that a mouse that doesn't answer greys the last reading out. The checks below cover what they take for granted: that the mouse answers as the probe measured it, that Stream Deck draws the image the plugin sends, at every key size, and that the key follows the mouse as it charges, leaves and comes back.
+The unit tests check against emulated receivers how the plugin reads the battery, through which feature and with which request, and what it makes of each level and charging state. They also check against a fake Stream Deck which image each reading draws on the keys, on the background each key's settings choose, that a press and the 10-minute timer read the battery again, that the timer stops once no key is shown, and that a mouse that doesn't answer greys the last reading out, and against the settings page's HTML that it offers the palette's tiles, in hue order, and the plugin's default background. The checks below cover what they take for granted: that the mouse answers as the probe measured it, that Stream Deck draws the image the plugin sends, at every key size, that the key follows the mouse as it charges, leaves and comes back, and that the settings page, which no test loads, saves what it shows.
 
 ## When to run these checks
 
