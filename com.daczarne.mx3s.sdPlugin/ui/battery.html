@@ -242,6 +242,29 @@
       </sdpi-item>
     </section>
 
+    <!-- What the key shows once the mouse isn't found, or before the first reading, whatever it shows while the mouse
+         is: the mouse, as filled or outlined as its section says, until Mouse is unchecked, and the battery and the
+         bolt, once they're checked. They and the percentage all take one color, the palette's grey until another is
+         picked. -->
+    <section>
+      <h2 class="section-heading">Mouse not found</h2>
+      <sdpi-item label="Show">
+        <div class="row">
+          <sdpi-checkbox setting="notFoundMouse" default="true" label="Mouse"></sdpi-checkbox>
+          <sdpi-checkbox setting="notFoundBattery" label="Battery"></sdpi-checkbox>
+          <sdpi-checkbox setting="notFoundBolt" label="Bolt"></sdpi-checkbox>
+        </div>
+      </sdpi-item>
+      <sdpi-item label="Color">
+        <div class="row">
+          <sdpi-color setting="notFoundColor" default="#9AA0A8"></sdpi-color>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <sdpi-button class="reset">Reset</sdpi-button>
+      </sdpi-item>
+    </section>
+
     <script src="battery.js"></script>
   </body>
 

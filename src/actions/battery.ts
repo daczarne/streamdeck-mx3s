@@ -21,8 +21,10 @@ import {
   DEFAULT_BOLT,
   DEFAULT_LEVELS,
   DEFAULT_MOUSE,
+  DEFAULT_NOT_FOUND,
   type Levels,
   type MouseStyle,
+  type NotFoundStyle,
   type Style,
 } from "./battery-image";
 
@@ -41,8 +43,9 @@ type Shown = { key: KeyAction<JsonObject>; style: Style };
  * The Battery key: shows how full the mouse's battery is, colored by the level that's at, and whether it's charging,
  * redrawing its image from each reading. Every key shows the same reading, since there's one mouse. The battery is read
  * when a key appears, when one is pressed, and every {@link REFRESH_MS} while one is shown. A mouse that doesn't answer,
- * such as one on another host, greys the key out, keeping the last reading. Each key draws it on the background its
- * settings choose, with the mouse, the battery, the bolt and the levels they choose.
+ * such as one on another host, turns the key to what its settings show for that, in grey unless they choose another
+ * color, keeping the last reading. Each key draws it on the background its settings choose, with the mouse, the
+ * battery, the bolt and the levels they choose.
  */
 @action({ UUID: "com.daczarne.mx3s.battery" })
 export class BatteryAction extends SingletonAction {
@@ -123,14 +126,33 @@ export class BatteryAction extends SingletonAction {
 // When a key can show the bolt, as the settings page saves it.
 const BOLT_SHOWN: readonly BoltShown[] = ["always", "charging", "never"];
 
-/** The style a key's settings choose: its background, its mouse, its battery, its bolt, and its levels. */
+/**
+ * The style a key's settings choose: its background, its mouse, its battery, its bolt, its levels, and what it shows
+ * once the mouse isn't found.
+ */
 export function styleOf(settings: JsonObject): Style {
+  const filled = filledOf(settings);
   return {
     background: backgroundOf(settings),
-    mouse: mouseOf(settings),
+    mouse: mouseOf(settings, filled),
     battery: batteryOf(settings),
     bolt: boltOf(settings),
     levels: levelsOf(settings),
+    notFound: notFoundOf(settings, filled),
+  };
+}
+
+/**
+ * What a key's settings choose to show once the mouse isn't found: the mouse, filled as `filled` says, when
+ * `notFoundMouse` is checked, the battery and the bolt when `notFoundBattery` and `notFoundBolt` are, all in the color
+ * `notFoundColor` holds. It doesn't depend on what the key shows while the mouse is found.
+ */
+function notFoundOf(settings: JsonObject, filled: boolean): NotFoundStyle {
+  return {
+    mouse: checkedOf(settings, "notFoundMouse", DEFAULT_NOT_FOUND.mouse !== undefined) ? { filled } : undefined,
+    battery: checkedOf(settings, "notFoundBattery", DEFAULT_NOT_FOUND.battery),
+    bolt: checkedOf(settings, "notFoundBolt", DEFAULT_NOT_FOUND.bolt),
+    color: colorOf(settings, "notFoundColor", DEFAULT_NOT_FOUND.color),
   };
 }
 
@@ -192,22 +214,29 @@ function backgroundOf(settings: JsonObject): string | undefined {
 
 /**
  * The mouse a key's settings choose: none when `showMouse` is unchecked, and otherwise the color `mouseColor` holds, or
- * its level's, when `mouseFollowsLevel` is checked, filled unless `mouseStyle` is `outlined`. A key that has chosen no style yet takes the default, and so does one whose
- * style isn't one, with a warning.
+ * its level's, when `mouseFollowsLevel` is checked, filled as `filled` says.
  */
-function mouseOf(settings: JsonObject): MouseStyle | undefined {
+function mouseOf(settings: JsonObject, filled: boolean): MouseStyle | undefined {
   if (settings.showMouse === false) {
     return undefined;
   }
   const color = colorOf(settings, "mouseColor", DEFAULT_MOUSE.color);
   const followsLevel = checkedOf(settings, "mouseFollowsLevel", DEFAULT_MOUSE.followsLevel);
+  return { color, filled, followsLevel };
+}
+
+/**
+ * Whether a key's settings draw the mouse filled: unless `mouseStyle` is `outlined`. A key that has chosen no style yet
+ * takes the default, and so does one whose style isn't one, with a warning.
+ */
+function filledOf(settings: JsonObject): boolean {
   const style: JsonValue | undefined = settings.mouseStyle;
   if (style === undefined || style === "filled" || style === "outlined") {
-    return { color, filled: style === undefined ? DEFAULT_MOUSE.filled : style === "filled", followsLevel };
+    return style === undefined ? DEFAULT_MOUSE.filled : style === "filled";
   }
   const fallback = DEFAULT_MOUSE.filled ? "filled" : "outlined";
   logger.warn(`Setting mouseStyle is ${JSON.stringify(style)}, not filled or outlined: using ${fallback}`);
-  return { color, filled: DEFAULT_MOUSE.filled, followsLevel };
+  return DEFAULT_MOUSE.filled;
 }
 
 /**

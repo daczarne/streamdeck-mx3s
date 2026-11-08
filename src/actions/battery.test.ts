@@ -13,6 +13,7 @@ import {
   DEFAULT_BOLT,
   DEFAULT_LEVELS,
   DEFAULT_MOUSE,
+  DEFAULT_NOT_FOUND,
 } from "./battery-image";
 
 //* Fakes
@@ -39,6 +40,7 @@ const TILE = {
   battery: DEFAULT_BATTERY,
   bolt: DEFAULT_BOLT,
   levels: DEFAULT_LEVELS,
+  notFound: DEFAULT_NOT_FOUND,
 };
 
 let deck: FakeDeck;
@@ -224,9 +226,28 @@ describe("styleOf", () => {
     expect(styleOf(settings)).toEqual({ ...TILE, background });
   });
 
+  it("takes an outlined mouse, outlined once the mouse isn't found too", () => {
+    expect(styleOf({ mouseStyle: "outlined" })).toEqual({
+      ...TILE,
+      mouse: { ...DEFAULT_MOUSE, filled: false },
+      notFound: { ...DEFAULT_NOT_FOUND, mouse: { filled: false } },
+    });
+  });
+
+  it.each([
+    ["nothing chosen for the mouse not found", {}, DEFAULT_NOT_FOUND],
+    [
+      "what to show once the mouse isn't found",
+      { notFoundMouse: false, notFoundBattery: true, notFoundBolt: true, notFoundColor: "#a1b2c3" },
+      { mouse: undefined, battery: true, bolt: true, color: "#a1b2c3" },
+    ],
+    ["the mouse not found even when it's hidden", { showMouse: false }, DEFAULT_NOT_FOUND],
+  ])("takes %s", (_case, settings, notFound) => {
+    expect(styleOf(settings).notFound).toEqual(notFound);
+  });
+
   it.each([
     ["a mouse color", { mouseColor: "#a1b2c3" }, { ...DEFAULT_MOUSE, color: "#a1b2c3" }],
-    ["an outlined mouse", { mouseStyle: "outlined" }, { ...DEFAULT_MOUSE, filled: false }],
     ["a filled mouse", { mouseStyle: "filled" }, { ...DEFAULT_MOUSE, filled: true }],
     ["the mouse following the level", { mouseFollowsLevel: true }, { ...DEFAULT_MOUSE, followsLevel: true }],
     ["the mouse in its own color", { mouseFollowsLevel: false }, DEFAULT_MOUSE],
@@ -303,15 +324,19 @@ describe("styleOf", () => {
     );
   });
 
-  it.each([["mouseFollowsLevel"], ["batteryFollowsLevel"], ["boltFollowsLevel"]])(
-    "takes the default, with a warning, for a %s that isn't true or false",
-    (setting) => {
-      expect(styleOf({ [setting]: "yes" })).toEqual(TILE);
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringMatching(new RegExp(`^Setting ${setting} is "yes", not true or false: using (true|false)$`)),
-      );
-    },
-  );
+  it.each([
+    ["mouseFollowsLevel"],
+    ["batteryFollowsLevel"],
+    ["boltFollowsLevel"],
+    ["notFoundMouse"],
+    ["notFoundBattery"],
+    ["notFoundBolt"],
+  ])("takes the default, with a warning, for a %s that isn't true or false", (setting) => {
+    expect(styleOf({ [setting]: "yes" })).toEqual(TILE);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp(`^Setting ${setting} is "yes", not true or false: using (true|false)$`)),
+    );
+  });
 
   it("takes the default mouse color and style, with a warning, for a setting that isn't one", () => {
     expect(styleOf({ mouseColor: "white", mouseStyle: "dotted" })).toEqual(TILE);
@@ -344,6 +369,12 @@ describe("styleOf", () => {
     expect(page).toContain(follows("mouseFollowsLevel", DEFAULT_MOUSE.followsLevel));
     expect(page).toContain(follows("batteryFollowsLevel", DEFAULT_BATTERY.followsLevel));
     expect(page).toContain(follows("boltFollowsLevel", DEFAULT_BOLT.chargingFollowsLevel));
+    expect(color("notFoundColor")).toBe(DEFAULT_NOT_FOUND.color.toUpperCase());
+    const shows = (setting: string, label: string, shown: boolean) =>
+      `<sdpi-checkbox setting="${setting}" ${shown ? 'default="true" ' : ""}label="${label}">`;
+    expect(page).toContain(shows("notFoundMouse", "Mouse", DEFAULT_NOT_FOUND.mouse !== undefined));
+    expect(page).toContain(shows("notFoundBattery", "Battery", DEFAULT_NOT_FOUND.battery));
+    expect(page).toContain(shows("notFoundBolt", "Bolt", DEFAULT_NOT_FOUND.bolt));
     expect(color("highColor")).toBe(DEFAULT_LEVELS.high.toUpperCase());
     expect(color("mediumColor")).toBe(DEFAULT_LEVELS.medium.toUpperCase());
     expect(color("lowColor")).toBe(DEFAULT_LEVELS.low.toUpperCase());
@@ -367,10 +398,17 @@ describe("the settings page", () => {
   const page = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.html", "utf8");
   const sections = [...page.matchAll(/<section>([\s\S]*?)<\/section>/g)].map(([, body]) => body ?? "");
 
-  it("heads each section, the key's elements in the order they go, then the levels", () => {
+  it("heads each section, the key's elements in the order they go, then the levels and the mouse not found", () => {
     const headings = sections.map((body) => /<h2 class="section-heading">([^<]+)<\/h2>/.exec(body)?.[1]);
 
-    expect(headings).toEqual(["Background", "Mouse icon", "Battery icon", "Bolt icon", "Battery level"]);
+    expect(headings).toEqual([
+      "Background",
+      "Mouse icon",
+      "Battery icon",
+      "Bolt icon",
+      "Battery level",
+      "Mouse not found",
+    ]);
   });
 
   it("greys out only controls the page has, following switches it has", () => {

@@ -4,8 +4,8 @@
  * another, or none. Each key also chooses its mouse: its color, filled or outlined, or none, whether it shows the
  * battery, and in which color, and when it shows the bolt, and in which colors. Leaving one out leaves the others where
  * they are. The percentage takes the color of the level it's at, on a scale of three each key chooses, and so do the
- * mouse, the battery and the bolt while charging, for a key that has them follow it. All of them turn grey once the
- * mouse isn't found, keeping the last reading.
+ * mouse, the battery and the bolt while charging, for a key that has them follow it. Once the mouse isn't found, the
+ * key shows what it chooses for that, all in one color, grey unless it chooses another, keeping the last reading.
  */
 import {
   ACCENTS,
@@ -29,9 +29,7 @@ const CELL = 0.34;
 const TOP = 0.03;
 const CENTERS = [0.17, 0.5, 0.83] as const;
 const NUMBER_DROP = 0.17;
-
-// The color of a key whose mouse isn't found.
-const NOT_FOUND = TILES.grey;
+const CELL_SIZE = SIZE * CELL;
 
 /** The background a key takes unless it chooses another. */
 export const DEFAULT_BACKGROUND = TILES.charcoal;
@@ -68,6 +66,17 @@ export const DEFAULT_LEVELS: Levels = {
   low: ACCENTS.scarlet,
 };
 
+/**
+ * What a key shows once the mouse isn't found, unless it chooses otherwise: the mouse, filled, and the percentage, in
+ * the palette's grey.
+ */
+export const DEFAULT_NOT_FOUND: NotFoundStyle = {
+  mouse: { filled: true },
+  battery: false,
+  bolt: false,
+  color: TILES.grey,
+};
+
 /** What the key shows: the last reading, if there was one, and whether the mouse answered the last read. */
 export type Shown = { battery: Battery | undefined; found: boolean };
 
@@ -94,9 +103,16 @@ export type BoltShown = "always" | "charging" | "never";
 export type BoltStyle = { show: BoltShown; charging: string; chargingFollowsLevel: boolean; idle: string };
 
 /**
+ * What a key shows once the mouse isn't found, whatever it shows while it is: the mouse, filled or outlined, or none,
+ * the battery or not, and the bolt or not. They and the percentage all take one color.
+ */
+export type NotFoundStyle = { mouse: { filled: boolean } | undefined; battery: boolean; bolt: boolean; color: string };
+
+/**
  * How a key draws what it shows: its background, a color such as `#2B2E33`, or none, which leaves the image
  * transparent, so the key shows Stream Deck's own black behind it, its mouse, or none, its battery, or none, its
- * bolt, and the levels the percentage, and what follows them, are colored by.
+ * bolt, the levels the percentage, and what follows them, are colored by, and what it shows once the mouse isn't
+ * found.
  */
 export type Style = {
   background: string | undefined;
@@ -104,6 +120,7 @@ export type Style = {
   battery: BatteryStyle | undefined;
   bolt: BoltStyle;
   levels: Levels;
+  notFound: NotFoundStyle;
 };
 
 /** The key's image, as a data URL Stream Deck takes for `setImage`. */
@@ -113,32 +130,69 @@ export function batteryImage(shown: Shown, style: Style): string {
 
 /** The key's image, as an SVG document. */
 export function batterySvg({ battery, found }: Shown, style: Style): string {
+  if (!found || battery === undefined) {
+    return notFoundSvg(battery, style);
+  }
   const { background, mouse, bolt, levels } = style;
-  const color = found && battery !== undefined ? levelColor(battery, levels) : NOT_FOUND;
-  // An element's color: its level's when it follows it, and otherwise its own, both grey once the mouse isn't found.
-  const tint = (own: string, followsLevel: boolean) => (followsLevel ? color : found ? own : NOT_FOUND);
-  const cell = SIZE * CELL;
-  const place = (center: number, glyph: string) =>
-    `<g transform="translate(${SIZE * center - cell / 2} ${SIZE * TOP})">${glyph}</g>`;
+  const color = levelColor(battery, levels);
+  // An element's color: its level's when it follows it, and otherwise its own.
+  const tint = (own: string, followsLevel: boolean) => (followsLevel ? color : own);
   const parts = [
-    background === undefined ? "" : `<rect width="${SIZE}" height="${SIZE}" fill="${background}"/>`,
+    backgroundRect(background),
     mouse === undefined
       ? ""
-      : place(CENTERS[0], mouseGlyph(cell, { color: tint(mouse.color, mouse.followsLevel), filled: mouse.filled })),
+      : place(
+          CENTERS[0],
+          mouseGlyph(CELL_SIZE, { color: tint(mouse.color, mouse.followsLevel), filled: mouse.filled }),
+        ),
     style.battery === undefined
       ? ""
       : place(CENTERS[1], batteryIcon(battery, tint(style.battery.color, style.battery.followsLevel))),
     boltShows(bolt, battery)
       ? place(
           CENTERS[2],
-          boltGlyph(cell, {
-            color: battery?.charging === true ? tint(bolt.charging, bolt.chargingFollowsLevel) : tint(bolt.idle, false),
+          boltGlyph(CELL_SIZE, {
+            color: battery.charging ? tint(bolt.charging, bolt.chargingFollowsLevel) : bolt.idle,
           }),
         )
       : "",
-    `<g transform="translate(0 ${SIZE * NUMBER_DROP})">${percentageGlyph(SIZE, battery === undefined ? { color } : { percentage: battery.percentage, color })}</g>`,
+    percentage(battery, color),
   ];
   return svgDoc(SIZE, parts.filter((part) => part !== "").join("\n"));
+}
+
+/**
+ * The key's image once the mouse isn't found, or before the first reading: what the key chooses to show then, from
+ * the last reading, if there was one, all in its color for that.
+ */
+function notFoundSvg(battery: Battery | undefined, { background, notFound }: Style): string {
+  const { color } = notFound;
+  const parts = [
+    backgroundRect(background),
+    notFound.mouse === undefined
+      ? ""
+      : place(CENTERS[0], mouseGlyph(CELL_SIZE, { color, filled: notFound.mouse.filled })),
+    notFound.battery ? place(CENTERS[1], batteryIcon(battery, color)) : "",
+    notFound.bolt ? place(CENTERS[2], boltGlyph(CELL_SIZE, { color })) : "",
+    percentage(battery, color),
+  ];
+  return svgDoc(SIZE, parts.filter((part) => part !== "").join("\n"));
+}
+
+/** The key's background, filling it, or nothing for none. */
+function backgroundRect(background: string | undefined): string {
+  return background === undefined ? "" : `<rect width="${SIZE}" height="${SIZE}" fill="${background}"/>`;
+}
+
+/** A glyph of the top row, placed on its third of the key. */
+function place(center: number, glyph: string): string {
+  return `<g transform="translate(${SIZE * center - CELL_SIZE / 2} ${SIZE * TOP})">${glyph}</g>`;
+}
+
+/** The percentage under the top row, in `color`, or dashes before the first reading. */
+function percentage(battery: Battery | undefined, color: string): string {
+  const number = percentageGlyph(SIZE, battery === undefined ? { color } : { percentage: battery.percentage, color });
+  return `<g transform="translate(0 ${SIZE * NUMBER_DROP})">${number}</g>`;
 }
 
 /** Whether a key shows the bolt: always, never, or while the last reading says the mouse is on its cable. */
@@ -148,8 +202,7 @@ function boltShows({ show }: BoltStyle, battery: Battery | undefined): boolean {
 
 /** The battery in the top row, filled as far as the last reading, or empty before the first one, in `color`. */
 function batteryIcon(battery: Battery | undefined, color: string): string {
-  const cell = SIZE * CELL;
-  return batteryGlyph(cell, battery === undefined ? { color } : { charge: battery.percentage / 100, color });
+  return batteryGlyph(CELL_SIZE, battery === undefined ? { color } : { charge: battery.percentage / 100, color });
 }
 
 /**
