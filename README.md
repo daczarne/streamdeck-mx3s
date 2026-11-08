@@ -91,7 +91,7 @@ A key on each computer for each of the other hosts lets the mouse be sent from a
 
 ## The Battery key
 
-The Battery key shows how full the mouse's battery is, as a percentage, with the mouse and a battery filled as far across the top. The battery and the percentage take the color of the level the percentage is at: green from 40%, yellow from 15%, and red below that. By default, a bolt shows next to the battery while the mouse is on its cable, charging or charged.
+The Battery key shows how full the mouse's battery is, as a percentage, with the mouse and a battery filled as far across the top. The percentage, and by default the battery, take the color of the level the percentage is at: green from 40%, yellow from 15%, and red below that. By default, a bolt shows next to the battery while the mouse is on its cable, charging or charged.
 
 The key reads the battery when it appears, when it's pressed, and every 10 minutes while it's shown. Every read reaches the mouse through the receiver, as Set Host does, and wakes it if it's at rest. When the mouse doesn't answer, such as when it's on another host, the key shows the last reading in grey. Until the plugin has read the battery once, the key shows an empty battery and dashes, in grey. Every Battery key shows the same reading, and the plugin draws the whole key, so it has no title.
 
