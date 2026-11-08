@@ -3,27 +3,39 @@
  * defaults, the `default` attribute each control has, or, for a checkbox without one, unchecked, the controls that say
  * nothing while a section's switch is off, such as the mouse's color while it isn't shown, greyed out, and the
  * percentages the high level starts from and the low level is below, the higher and the lower of the two the medium
- * level is between. A control saves the value a script
- * gives it, as it saves the user's, and reports every change of its value, the saved settings the page reads included,
- * with `valuechange`. The controls disabled on the page have no setting, and are left alone.
+ * level is between. A control saves the value a script gives it, as it saves the user's, and reports every change of
+ * its value, the saved settings the page reads included, with `valuechange`.
  */
 
 /**
- * The controls that only say something under a choice of the section they're in, by selector, with that choice. The
- * plugin ignores their settings when it isn't made, so they're greyed out then.
+ * The controls that only say something under a choice of the section they're in, by selector, with that choice, such
+ * as a color picker while its element doesn't follow the battery's level. The plugin ignores their settings when it
+ * isn't made, so they're greyed out then.
  *
  * @type {[string, () => boolean][]}
  */
 const DEPENDENT = [
   ['sdpi-color[setting="background"]', () => !checked("noBackground")],
   ['sdpi-radio[setting="mouseStyle"]', () => checked("showMouse")],
-  ['sdpi-color[setting="mouseColor"]', () => checked("showMouse")],
-  ['sdpi-color[setting="boltColor"]', () => chosen("showBolt") !== "never"],
+  ['sdpi-checkbox[setting="mouseFollowsLevel"]', () => checked("showMouse")],
+  ['sdpi-color[setting="mouseColor"]', () => checked("showMouse") && !checked("mouseFollowsLevel")],
+  ['sdpi-checkbox[setting="batteryFollowsLevel"]', () => checked("showBattery")],
+  ['sdpi-color[setting="batteryColor"]', () => checked("showBattery") && !checked("batteryFollowsLevel")],
+  ['sdpi-checkbox[setting="boltFollowsLevel"]', () => chosen("showBolt") !== "never"],
+  ['sdpi-color[setting="boltColor"]', () => chosen("showBolt") !== "never" && !checked("boltFollowsLevel")],
   ['sdpi-color[setting="boltIdleColor"]', () => chosen("showBolt") === "always"],
 ];
 
 // The switches the dependent controls follow.
-const SWITCHES = ["noBackground", "showMouse", "showBolt"];
+const SWITCHES = [
+  "noBackground",
+  "showMouse",
+  "mouseFollowsLevel",
+  "showBattery",
+  "batteryFollowsLevel",
+  "showBolt",
+  "boltFollowsLevel",
+];
 
 /**
  * The control with the setting `setting`.

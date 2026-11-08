@@ -12,10 +12,12 @@ import type { JsonObject, JsonValue } from "@elgato/utils";
 import { type Battery, readBattery } from "../battery";
 import { logger as pluginLogger } from "../logging";
 import {
+  type BatteryStyle,
   type BoltShown,
   type BoltStyle,
   batteryImage,
   DEFAULT_BACKGROUND,
+  DEFAULT_BATTERY,
   DEFAULT_BOLT,
   DEFAULT_LEVELS,
   DEFAULT_MOUSE,
@@ -121,17 +123,28 @@ export class BatteryAction extends SingletonAction {
 // When a key can show the bolt, as the settings page saves it.
 const BOLT_SHOWN: readonly BoltShown[] = ["always", "charging", "never"];
 
-/**
- * The style a key's settings choose: its background, its mouse, whether it shows the battery, which it does unless
- * `showBattery` is unchecked, its bolt, and its levels.
- */
+/** The style a key's settings choose: its background, its mouse, its battery, its bolt, and its levels. */
 export function styleOf(settings: JsonObject): Style {
   return {
     background: backgroundOf(settings),
     mouse: mouseOf(settings),
-    showBattery: settings.showBattery !== false,
+    battery: batteryOf(settings),
     bolt: boltOf(settings),
     levels: levelsOf(settings),
+  };
+}
+
+/**
+ * The battery a key's settings choose: none when `showBattery` is unchecked, and otherwise in its level's color unless
+ * `batteryFollowsLevel` is unchecked, and then in the color `batteryColor` holds.
+ */
+function batteryOf(settings: JsonObject): BatteryStyle | undefined {
+  if (settings.showBattery === false) {
+    return undefined;
+  }
+  return {
+    color: colorOf(settings, "batteryColor", DEFAULT_BATTERY.color),
+    followsLevel: checkedOf(settings, "batteryFollowsLevel", DEFAULT_BATTERY.followsLevel),
   };
 }
 
@@ -151,7 +164,8 @@ function levelsOf(settings: JsonObject): Levels {
 
 /**
  * The bolt a key's settings choose: when it shows, from `showBolt`, and its colors while the mouse charges and while it
- * doesn't, from `boltColor` and `boltIdleColor`. A key that has chosen none yet shows it while the mouse charges, and
+ * doesn't, from `boltColor` and `boltIdleColor`, or, while it charges, its level's, when `boltFollowsLevel` is checked.
+ * A key that has chosen none yet shows it while the mouse charges, and
  * so does one whose choice isn't one, with a warning.
  */
 function boltOf(settings: JsonObject): BoltStyle {
@@ -164,7 +178,8 @@ function boltOf(settings: JsonObject): BoltStyle {
       `Setting showBolt is ${JSON.stringify(value)}, not one of ${BOLT_SHOWN.join(", ")}: using ${DEFAULT_BOLT.show}`,
     );
   }
-  return { show: show ?? DEFAULT_BOLT.show, charging, idle };
+  const chargingFollowsLevel = checkedOf(settings, "boltFollowsLevel", DEFAULT_BOLT.chargingFollowsLevel);
+  return { show: show ?? DEFAULT_BOLT.show, charging, chargingFollowsLevel, idle };
 }
 
 /**
@@ -176,8 +191,8 @@ function backgroundOf(settings: JsonObject): string | undefined {
 }
 
 /**
- * The mouse a key's settings choose: none when `showMouse` is unchecked, and otherwise the color `mouseColor` holds,
- * filled unless `mouseStyle` is `outlined`. A key that has chosen no style yet takes the default, and so does one whose
+ * The mouse a key's settings choose: none when `showMouse` is unchecked, and otherwise the color `mouseColor` holds, or
+ * its level's, when `mouseFollowsLevel` is checked, filled unless `mouseStyle` is `outlined`. A key that has chosen no style yet takes the default, and so does one whose
  * style isn't one, with a warning.
  */
 function mouseOf(settings: JsonObject): MouseStyle | undefined {
@@ -185,13 +200,30 @@ function mouseOf(settings: JsonObject): MouseStyle | undefined {
     return undefined;
   }
   const color = colorOf(settings, "mouseColor", DEFAULT_MOUSE.color);
+  const followsLevel = checkedOf(settings, "mouseFollowsLevel", DEFAULT_MOUSE.followsLevel);
   const style: JsonValue | undefined = settings.mouseStyle;
   if (style === undefined || style === "filled" || style === "outlined") {
-    return { color, filled: style === undefined ? DEFAULT_MOUSE.filled : style === "filled" };
+    return { color, filled: style === undefined ? DEFAULT_MOUSE.filled : style === "filled", followsLevel };
   }
   const fallback = DEFAULT_MOUSE.filled ? "filled" : "outlined";
   logger.warn(`Setting mouseStyle is ${JSON.stringify(style)}, not filled or outlined: using ${fallback}`);
-  return { color, filled: DEFAULT_MOUSE.filled };
+  return { color, filled: DEFAULT_MOUSE.filled, followsLevel };
+}
+
+/**
+ * Whether the checkbox for a key's setting `setting` is checked. A key that has none yet takes `fallback`, and so does
+ * one whose setting isn't true or false, with a warning.
+ */
+function checkedOf(settings: JsonObject, setting: string, fallback: boolean): boolean {
+  const value: JsonValue | undefined = settings[setting];
+  if (value === undefined) {
+    return fallback;
+  }
+  if (typeof value === "boolean") {
+    return value;
+  }
+  logger.warn(`Setting ${setting} is ${JSON.stringify(value)}, not true or false: using ${fallback}`);
+  return fallback;
 }
 
 /**
