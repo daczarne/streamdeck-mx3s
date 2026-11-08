@@ -2,9 +2,9 @@
  * The Battery key's image, drawn afresh from each reading: the mouse, the battery and a bolt in a row across the
  * top, and the percentage below them, on a background each key chooses, the palette's charcoal tile unless it chooses
  * another, or none. Each key also chooses its mouse: its color, filled or outlined, or none, whether it shows the
- * battery, and when it shows the bolt, and in which colors. Leaving one out leaves the others where they are. Its
- * colors follow the level the mouse puts its charge at, and turn grey once the mouse isn't found, keeping the last
- * reading.
+ * battery, and when it shows the bolt, and in which colors. Leaving one out leaves the others where they are. The
+ * battery and the percentage take the color of the level the percentage is at, on a scale of three each key chooses,
+ * and turn grey once the mouse isn't found, keeping the last reading.
  */
 import {
   ACCENTS,
@@ -17,7 +17,7 @@ import {
   WHITE,
 } from "@daczarne/streamdeck-icons";
 
-import type { Battery, Level } from "../battery";
+import type { Battery } from "../battery";
 
 // The side of the image, in pixels: a key's at high density, which Stream Deck scales down for the others.
 const SIZE = 144;
@@ -29,19 +29,8 @@ const TOP = 0.03;
 const CENTERS = [0.17, 0.5, 0.83] as const;
 const NUMBER_DROP = 0.17;
 
-// The colors of each level, and of a key whose mouse isn't found.
-const LEVEL_COLORS: Record<Level, string> = {
-  full: ACCENTS.leaf,
-  good: ACCENTS.leaf,
-  low: ACCENTS.gold,
-  critical: ACCENTS.scarlet,
-};
+// The color of a key whose mouse isn't found.
 const NOT_FOUND = TILES.grey;
-
-// The percentages under which a battery counts as low, and as critical, when the mouse reports a level the plugin
-// doesn't know.
-const LOW_BELOW = 60;
-const CRITICAL_BELOW = 30;
 
 /** The background a key takes unless it chooses another. */
 export const DEFAULT_BACKGROUND = TILES.charcoal;
@@ -55,11 +44,30 @@ export const DEFAULT_MOUSE: MouseStyle = { color: WHITE, filled: true };
  */
 export const DEFAULT_BOLT: BoltStyle = { show: "charging", charging: ACCENTS.leaf, idle: TILES.slate };
 
+/**
+ * The levels a key colors a battery by unless it chooses others: high, in the palette's green, from 60%, medium, in its
+ * gold, from 30%, and low, in its scarlet, below that.
+ */
+export const DEFAULT_LEVELS: Levels = {
+  high: ACCENTS.leaf,
+  highFrom: 60,
+  medium: ACCENTS.gold,
+  mediumFrom: 30,
+  low: ACCENTS.scarlet,
+};
+
 /** What the key shows: the last reading, if there was one, and whether the mouse answered the last read. */
 export type Shown = { battery: Battery | undefined; found: boolean };
 
 /** How a key draws the mouse: in which color, and filled or outlined. */
 export type MouseStyle = { color: string; filled: boolean };
+
+/**
+ * The levels a key colors a battery by: high from `highFrom`%, medium from `mediumFrom`%, and low below that, each in
+ * its color. A battery that reaches `highFrom` is high whatever `mediumFrom` is, so a medium level from as high or
+ * higher is never shown.
+ */
+export type Levels = { high: string; highFrom: number; medium: string; mediumFrom: number; low: string };
 
 /** When a key shows the bolt: always, only while the mouse charges, or never. */
 export type BoltShown = "always" | "charging" | "never";
@@ -70,13 +78,14 @@ export type BoltStyle = { show: BoltShown; charging: string; idle: string };
 /**
  * How a key draws what it shows: its background, a color such as `#2B2E33`, or none, which leaves the image
  * transparent, so the key shows Stream Deck's own black behind it, its mouse, or none, whether it shows the battery,
- * which always takes the color of its level, and its bolt.
+ * which always takes the color of its level, its bolt, and the levels the battery and the percentage are colored by.
  */
 export type Style = {
   background: string | undefined;
   mouse: MouseStyle | undefined;
   showBattery: boolean;
   bolt: BoltStyle;
+  levels: Levels;
 };
 
 /** The key's image, as a data URL Stream Deck takes for `setImage`. */
@@ -85,8 +94,8 @@ export function batteryImage(shown: Shown, style: Style): string {
 }
 
 /** The key's image, as an SVG document. */
-export function batterySvg({ battery, found }: Shown, { background, mouse, showBattery, bolt }: Style): string {
-  const color = found && battery !== undefined ? levelColor(battery) : NOT_FOUND;
+export function batterySvg({ battery, found }: Shown, { background, mouse, showBattery, bolt, levels }: Style): string {
+  const color = found && battery !== undefined ? levelColor(battery, levels) : NOT_FOUND;
   const cell = SIZE * CELL;
   const place = (center: number, glyph: string) =>
     `<g transform="translate(${SIZE * center - cell / 2} ${SIZE * TOP})">${glyph}</g>`;
@@ -120,13 +129,13 @@ function boltColor({ charging, idle }: BoltStyle, battery: Battery | undefined, 
   return battery?.charging === true ? charging : idle;
 }
 
-/** The color of a battery: its level's, or, for a level the plugin doesn't know, its percentage's. */
-function levelColor({ level, percentage }: Battery): string {
-  if (level !== undefined) {
-    return LEVEL_COLORS[level];
+/**
+ * The color of a battery: the color of the level its percentage is at, high first, then medium, then low. The level
+ * the mouse reports isn't used, since where it puts each one isn't known, and can't be chosen.
+ */
+function levelColor({ percentage }: Battery, { high, highFrom, medium, mediumFrom, low }: Levels): string {
+  if (percentage >= highFrom) {
+    return high;
   }
-  if (percentage < CRITICAL_BELOW) {
-    return ACCENTS.scarlet;
-  }
-  return percentage < LOW_BELOW ? ACCENTS.gold : ACCENTS.leaf;
+  return percentage >= mediumFrom ? medium : low;
 }
