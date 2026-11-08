@@ -2,8 +2,9 @@
  * The Battery key's image, drawn afresh from each reading: the mouse, the battery and a bolt in a row across the
  * top, and the percentage below them, on a background each key chooses, the palette's charcoal tile unless it chooses
  * another, or none. Each key also chooses its mouse: its color, filled or outlined, or none, whether it shows the
- * battery, and when it shows the bolt, and in which colors. Leaving one out leaves the others where they are. Its colors follow the level the mouse
- * puts its charge at, and turn grey once the mouse isn't found, keeping the last reading.
+ * battery, and when it shows the bolt, and in which colors. Leaving one out leaves the others where they are. Its
+ * colors follow the level the mouse puts its charge at, and turn grey once the mouse isn't found, keeping the last
+ * reading.
  */
 import {
   ACCENTS,
