@@ -48,7 +48,7 @@ The plugin reaches the mouse through a Logi Bolt receiver on each computer, pair
 
 A newer release installs the same way, over the one installed. To remove the plugin, uninstall it from the **Plugins** tab of Stream Deck's preferences.
 
-If an installed plugin doesn't work, [an issue][issues] with its log helps. The logs are in the plugin's folder, newest in `mx3s.log`:
+If an installed plugin doesn't work, [a bug report][bug-report] with its log helps. The logs are in the plugin's folder, newest in `mx3s.log`:
 
 - On macOS: `~/Library/Application Support/com.elgato.StreamDeck/Plugins/com.daczarne.mx3s.sdPlugin/logs/`
 - On Windows: `%APPDATA%\Elgato\StreamDeck\Plugins\com.daczarne.mx3s.sdPlugin\logs\`
@@ -181,6 +181,7 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
 [check-ui]: scripts/check-ui.mjs
 [contributing]: docs/contributing.md
+[bug-report]: https://github.com/daczarne/streamdeck-mx3s/issues/new?template=bug_report.yaml
 [issues]: https://github.com/daczarne/streamdeck-mx3s/issues
 [latest-release]: https://github.com/daczarne/streamdeck-mx3s/releases/latest
 [license]: LICENSE
