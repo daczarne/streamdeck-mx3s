@@ -358,6 +358,19 @@ describe("the settings page", () => {
     }
   });
 
+  it("offers the medium level's percentages from 100% down to 0%, in steps of 5%", () => {
+    const steps = Array.from({ length: 21 }, (_, step) => 100 - step * 5);
+
+    for (const setting of ["mediumFrom", "mediumTo"]) {
+      const select =
+        new RegExp(`<sdpi-select setting="${setting}"[^>]*>([\\s\\S]*?)</sdpi-select>`).exec(page)?.[1] ?? "";
+      const options = [...select.matchAll(/<option value="(\d+)">(\d+)%<\/option>/g)];
+
+      expect(options.map(([, value]) => Number(value))).toEqual(steps);
+      expect(options.every(([, value, shown]) => value === shown)).toBe(true);
+    }
+  });
+
   it("ends each section with a Reset button, after every setting it resets", () => {
     for (const body of sections) {
       expect(body.match(/<sdpi-button class="reset">Reset<\/sdpi-button>/g)).toHaveLength(1);
