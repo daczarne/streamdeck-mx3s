@@ -18,6 +18,7 @@ import {
   DEFAULT_BOLT,
   DEFAULT_LEVELS,
   DEFAULT_MOUSE,
+  DEFAULT_NOT_FOUND,
 } from "./battery-image";
 
 /** A reading of the battery, 95%, full and not charging unless given otherwise, as the mouse was measured. */
@@ -33,6 +34,7 @@ const TILE = {
   battery: DEFAULT_BATTERY,
   bolt: DEFAULT_BOLT,
   levels: DEFAULT_LEVELS,
+  notFound: DEFAULT_NOT_FOUND,
 };
 
 /** The colors an SVG uses, for its fills and strokes. */
@@ -117,24 +119,6 @@ describe("batterySvg", () => {
     expect(batterySvg({ battery: reading({ level: "low", charging: true }), found: true }, TILE)).toContain(bolt);
     expect(batterySvg({ battery: reading({ charging: false }), found: true }, TILE)).not.toContain("stroke-linejoin");
   });
-
-  it("greys out the last reading when the mouse isn't found", () => {
-    const svg = batterySvg(
-      { battery: reading({ percentage: 25, level: "critical", charging: true }), found: false },
-      TILE,
-    );
-
-    expect(colors(svg)).toEqual(new Set([TILES.charcoal, TILES.grey]));
-    expect(svg).toContain(percentageGlyph(144, { percentage: 25, color: TILES.grey }));
-  });
-
-  it("draws an empty battery and dashes in grey when the mouse has never been found", () => {
-    const svg = batterySvg({ battery: undefined, found: false }, TILE);
-
-    expect(colors(svg)).toEqual(new Set([TILES.charcoal, TILES.grey]));
-    expect(svg).toContain(percentageGlyph(144, { color: TILES.grey }));
-    expect(svg).toContain(batteryGlyph(144 * 0.34, { color: TILES.grey }));
-  });
 });
 
 describe("its background", () => {
@@ -176,23 +160,11 @@ describe("its mouse", () => {
     expect(colors(svg)).not.toContain(WHITE);
   });
 
-  it("turns grey with the rest of the key when the mouse isn't found, whatever its color", () => {
-    const svg = batterySvg(
-      { battery: reading(), found: false },
-      { ...TILE, mouse: { color: "#123456", filled: false, followsLevel: false } },
-    );
-
-    expect(svg).toContain(mouseGlyph(144 * 0.34, { color: TILES.grey, filled: false }));
-  });
-
-  it("takes its level's color when it follows it, and turns grey with the rest of the key", () => {
+  it("takes its level's color when it follows it", () => {
     const mouse = { ...DEFAULT_MOUSE, followsLevel: true };
 
     expect(batterySvg({ battery: reading({ percentage: 20 }), found: true }, { ...TILE, mouse })).toContain(
       mouseGlyph(144 * 0.34, { color: ACCENTS.gold, filled: true }),
-    );
-    expect(batterySvg({ battery: reading({ percentage: 20 }), found: false }, { ...TILE, mouse })).toContain(
-      mouseGlyph(144 * 0.34, { color: TILES.grey, filled: true }),
     );
   });
 
@@ -208,16 +180,13 @@ describe("its mouse", () => {
 });
 
 describe("its battery", () => {
-  it("takes its own color when it doesn't follow its level, and turns grey with the rest of the key", () => {
+  it("takes its own color when it doesn't follow its level", () => {
     const battery = { color: "#123456", followsLevel: false };
 
     const svg = batterySvg({ battery: reading({ percentage: 20 }), found: true }, { ...TILE, battery });
 
     expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.2, color: "#123456" }));
     expect(svg).toContain(percentageGlyph(144, { percentage: 20, color: ACCENTS.gold }));
-    expect(batterySvg({ battery: reading({ percentage: 20 }), found: false }, { ...TILE, battery })).toContain(
-      batteryGlyph(144 * 0.34, { charge: 0.2, color: TILES.grey }),
-    );
   });
 
   it("is left out when the key chooses not to show it, with the mouse, the bolt and the percentage where they were", () => {
@@ -269,23 +238,6 @@ describe("its bolt", () => {
     expect(
       batterySvg({ battery: reading({ percentage: 10, charging: false }), found: true }, { ...TILE, bolt }),
     ).toContain(boltGlyph(BOLT, { color: "#654321" }));
-    expect(
-      batterySvg({ battery: reading({ percentage: 10, charging: true }), found: false }, { ...TILE, bolt }),
-    ).toContain(boltGlyph(BOLT, { color: TILES.grey }));
-  });
-
-  it("shows always, as not charging, before the first reading", () => {
-    const svg = batterySvg({ battery: undefined, found: false }, { ...TILE, bolt: { show: "always", ...CUSTOM } });
-
-    expect(svg).toContain(boltGlyph(BOLT, { color: TILES.grey }));
-  });
-
-  it("turns grey with the rest of the key when the mouse isn't found, whatever its colors", () => {
-    const shown = { battery: reading({ charging: false }), found: false };
-
-    expect(batterySvg(shown, { ...TILE, bolt: { show: "always", ...CUSTOM } })).toContain(
-      boltGlyph(BOLT, { color: TILES.grey }),
-    );
   });
 
   it("is dim slate by default while the mouse doesn't charge, for a key that shows it always", () => {
@@ -305,6 +257,87 @@ describe("its bolt", () => {
     const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
     const all = placed(batterySvg(shown, TILE));
     expect(placed(without)).toEqual([...all.slice(0, 2), ...all.slice(3)]);
+  });
+});
+
+describe("once the mouse isn't found", () => {
+  const CELL = 144 * 0.34;
+  const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
+  // Everything a key can show, in colors of its own, which a key whose mouse isn't found doesn't take.
+  const EVERYTHING = {
+    ...TILE,
+    mouse: { color: "#123456", filled: true, followsLevel: true },
+    battery: { color: "#123456", followsLevel: false },
+    bolt: { ...DEFAULT_BOLT, show: "always", charging: "#123456", idle: "#123456" },
+  } as const;
+
+  it("shows the mouse and the last reading's percentage in grey by default, and nothing else", () => {
+    const svg = batterySvg({ battery: reading({ percentage: 25, charging: true }), found: false }, EVERYTHING);
+
+    expect(colors(svg)).toEqual(new Set([TILES.charcoal, TILES.grey]));
+    expect(svg).toContain(mouseGlyph(CELL, { color: TILES.grey, filled: true }));
+    expect(svg).toContain(percentageGlyph(144, { percentage: 25, color: TILES.grey }));
+    const all = placed(batterySvg({ battery: reading(), found: true }, TILE));
+    expect(placed(svg)).toEqual([all[0], all.at(-1)]);
+  });
+
+  it("shows the mouse and dashes before the first reading", () => {
+    const svg = batterySvg({ battery: undefined, found: false }, TILE);
+
+    expect(colors(svg)).toEqual(new Set([TILES.charcoal, TILES.grey]));
+    expect(svg).toContain(mouseGlyph(CELL, { color: TILES.grey, filled: true }));
+    expect(svg).toContain(percentageGlyph(144, { color: TILES.grey }));
+  });
+
+  it("shows what the key chooses for it, all in its color, whatever the key shows otherwise", () => {
+    const notFound = { mouse: { filled: false }, battery: true, bolt: true, color: "#654321" };
+    const style = { ...EVERYTHING, mouse: undefined, notFound };
+
+    const svg = batterySvg({ battery: reading({ percentage: 25 }), found: false }, style);
+
+    expect(colors(svg)).toEqual(new Set([TILES.charcoal, "#654321"]));
+    expect(svg).toContain(mouseGlyph(CELL, { color: "#654321", filled: false }));
+    expect(svg).toContain(batteryGlyph(CELL, { charge: 0.25, color: "#654321" }));
+    expect(svg).toContain(boltGlyph(CELL, { color: "#654321" }));
+    expect(svg).toContain(percentageGlyph(144, { percentage: 25, color: "#654321" }));
+  });
+
+  it("shows an empty battery before the first reading, when the key chooses it", () => {
+    const style = { ...TILE, notFound: { ...DEFAULT_NOT_FOUND, battery: true } };
+
+    expect(batterySvg({ battery: undefined, found: false }, style)).toContain(
+      batteryGlyph(CELL, { color: TILES.grey }),
+    );
+  });
+
+  it.each([
+    ["charging", false],
+    ["never", true],
+  ] as const)(
+    "shows the bolt when the key chooses it, even when its section is set to %s and charging is %s",
+    (show, charging) => {
+      const style = { ...TILE, bolt: { ...DEFAULT_BOLT, show }, notFound: { ...DEFAULT_NOT_FOUND, bolt: true } };
+
+      expect(batterySvg({ battery: reading({ charging }), found: false }, style)).toContain(
+        boltGlyph(CELL, { color: TILES.grey }),
+      );
+    },
+  );
+
+  it("leaves out everything but the percentage when the key chooses, even what it shows always", () => {
+    const style = { ...EVERYTHING, notFound: { ...DEFAULT_NOT_FOUND, mouse: undefined } };
+
+    const svg = batterySvg({ battery: reading({ charging: true }), found: false }, style);
+
+    expect(placed(svg)).toEqual([placed(batterySvg({ battery: reading(), found: true }, TILE)).at(-1)]);
+  });
+
+  it("leaves out the mouse when the key chooses, with the percentage where it was", () => {
+    const style = { ...TILE, notFound: { ...DEFAULT_NOT_FOUND, mouse: undefined } };
+
+    const svg = batterySvg({ battery: reading(), found: false }, style);
+
+    expect(placed(svg)).toEqual([placed(batterySvg({ battery: reading(), found: true }, TILE)).at(-1)]);
   });
 });
 
