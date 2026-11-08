@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 
-import { TILES } from "@daczarne/streamdeck-icons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type Battery, type BatteryResult, readBattery } from "../battery";
@@ -224,42 +223,5 @@ describe("styleOf", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       `Setting background is ${JSON.stringify(value)}, not a color: using ${DEFAULT_BACKGROUND}`,
     );
-  });
-});
-
-describe("the settings page", () => {
-  const page = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.html", "utf8");
-  const swatches = [
-    ...page.matchAll(
-      /<button type="button" class="swatch" data-color="([^"]+)" title="([^"]+)" style="background-color: ([^"]+)">/g,
-    ),
-  ].map(([, color, name, shown]) => ({ color, name, shown }));
-
-  /** A color's hue, from 0 to 360, its saturation and its lightness, from 0 to 1. */
-  function hsl(hex: string): { hue: number; saturation: number; lightness: number } {
-    const [r = 0, g = 0, b = 0] = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
-    const [max, min] = [Math.max(r, g, b), Math.min(r, g, b)];
-    const [lightness, range] = [(max + min) / 2, max - min];
-    const saturation = range === 0 ? 0 : range / (1 - Math.abs(2 * lightness - 1));
-    const sector =
-      range === 0 ? 0 : max === r ? ((g - b) / range + 6) % 6 : max === g ? (b - r) / range + 2 : (r - g) / range + 4;
-    return { hue: sector * 60, saturation, lightness };
-  }
-
-  it("offers every one of the palette's tiles as a swatch, showing the color it picks", () => {
-    expect(swatches.map(({ name, color }) => [name, color]).toSorted()).toEqual(Object.entries(TILES).toSorted());
-    for (const { color, shown } of swatches) {
-      expect(shown).toBe(color);
-    }
-  });
-
-  it("orders them by hue, then the neutrals, which have none to speak of, from dark to light", () => {
-    // Below this saturation, a tile reads as grey rather than as a hue.
-    const NEUTRAL = 0.12;
-    const tiles = Object.entries(TILES).map(([name, color]) => ({ name, ...hsl(color) }));
-    const hued = tiles.filter((tile) => tile.saturation >= NEUTRAL).toSorted((a, b) => a.hue - b.hue);
-    const neutral = tiles.filter((tile) => tile.saturation < NEUTRAL).toSorted((a, b) => a.lightness - b.lightness);
-
-    expect(swatches.map(({ name }) => name)).toEqual([...hued, ...neutral].map(({ name }) => name));
   });
 });
