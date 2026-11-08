@@ -7,7 +7,7 @@ import { type Battery, type BatteryResult, readBattery } from "../battery";
 import { logger } from "../logging";
 import { FakeDeck } from "../test-support/fake-deck";
 import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
-import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_MOUSE } from "./battery-image";
+import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_BOLT, DEFAULT_MOUSE } from "./battery-image";
 
 //* Fakes
 
@@ -25,8 +25,9 @@ const BATTERY = "com.daczarne.mx3s.battery";
 const FULL: Battery = { percentage: 95, level: "full", charging: false };
 const LOW: Battery = { percentage: 20, level: "low", charging: true };
 
-// The style of a key that hasn't chosen one: the charcoal tile, the filled white mouse, and the battery.
-const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true };
+// The style of a key that hasn't chosen one: the charcoal tile, the filled white mouse, the battery, and the green
+// bolt while charging.
+const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true, bolt: DEFAULT_BOLT };
 
 let deck: FakeDeck;
 
@@ -229,6 +230,30 @@ describe("styleOf", () => {
     expect(styleOf(settings)).toEqual({ ...TILE, showBattery });
   });
 
+  it.each([
+    ["the bolt always", { showBolt: "always" }, { ...DEFAULT_BOLT, show: "always" }],
+    ["the bolt never", { showBolt: "never" }, { ...DEFAULT_BOLT, show: "never" }],
+    ["the bolt while charging", { showBolt: "charging" }, DEFAULT_BOLT],
+    [
+      "the bolt's colors",
+      { boltColor: "#a1b2c3", boltIdleColor: "#c3b2a1" },
+      { show: "charging", charging: "#a1b2c3", idle: "#c3b2a1" },
+    ],
+  ])("takes %s", (_case, settings, bolt) => {
+    expect(styleOf(settings)).toEqual({ ...TILE, bolt });
+  });
+
+  it("takes the default bolt, with a warning, for settings that aren't one", () => {
+    expect(styleOf({ showBolt: "sometimes", boltColor: 3, boltIdleColor: "grey" })).toEqual(TILE);
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Setting showBolt is "sometimes", not one of always, charging, never: using charging',
+    );
+    expect(logger.warn).toHaveBeenCalledWith(`Setting boltColor is 3, not a color: using ${DEFAULT_BOLT.charging}`);
+    expect(logger.warn).toHaveBeenCalledWith(
+      `Setting boltIdleColor is "grey", not a color: using ${DEFAULT_BOLT.idle}`,
+    );
+  });
+
   it("takes the default mouse color and style, with a warning, for a setting that isn't one", () => {
     expect(styleOf({ mouseColor: "white", mouseStyle: "dotted" })).toEqual(TILE);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -250,6 +275,9 @@ describe("styleOf", () => {
     // A checkbox's default checks it whatever it says, so the mouse shown by default is a checkbox with one.
     expect(page).toContain('<sdpi-checkbox setting="showMouse" default="true" label="Show">');
     expect(page).toContain('<sdpi-checkbox setting="showBattery" default="true" label="Show">');
+    expect(/<sdpi-radio setting="showBolt" default="([a-z]+)"/.exec(page)?.[1]).toBe(DEFAULT_BOLT.show);
+    expect(color("boltColor")).toBe(DEFAULT_BOLT.charging.toUpperCase());
+    expect(color("boltIdleColor")).toBe(DEFAULT_BOLT.idle.toUpperCase());
     // The battery takes its level's color, which the disabled picker shows for a full one.
     expect(page).toContain(`<sdpi-color default="${ACCENTS.leaf}" disabled>`);
   });

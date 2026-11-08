@@ -11,7 +11,16 @@ import type { JsonObject, JsonValue } from "@elgato/utils";
 
 import { type Battery, readBattery } from "../battery";
 import { logger as pluginLogger } from "../logging";
-import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_MOUSE, type MouseStyle, type Style } from "./battery-image";
+import {
+  type BoltShown,
+  type BoltStyle,
+  batteryImage,
+  DEFAULT_BACKGROUND,
+  DEFAULT_BOLT,
+  DEFAULT_MOUSE,
+  type MouseStyle,
+  type Style,
+} from "./battery-image";
 
 const logger = pluginLogger.createScope("Battery key");
 
@@ -107,12 +116,38 @@ export class BatteryAction extends SingletonAction {
   }
 }
 
+// When a key can show the bolt, as the settings page saves it.
+const BOLT_SHOWN: readonly BoltShown[] = ["always", "charging", "never"];
+
 /**
- * The style a key's settings choose: its background, its mouse, and whether it shows the battery, which it does unless
- * `showBattery` is unchecked.
+ * The style a key's settings choose: its background, its mouse, whether it shows the battery, which it does unless
+ * `showBattery` is unchecked, and its bolt.
  */
 export function styleOf(settings: JsonObject): Style {
-  return { background: backgroundOf(settings), mouse: mouseOf(settings), showBattery: settings.showBattery !== false };
+  return {
+    background: backgroundOf(settings),
+    mouse: mouseOf(settings),
+    showBattery: settings.showBattery !== false,
+    bolt: boltOf(settings),
+  };
+}
+
+/**
+ * The bolt a key's settings choose: when it shows, from `showBolt`, and its colors while the mouse charges and while it
+ * doesn't, from `boltColor` and `boltIdleColor`. A key that has chosen none yet shows it while the mouse charges, and
+ * so does one whose choice isn't one, with a warning.
+ */
+function boltOf(settings: JsonObject): BoltStyle {
+  const charging = colorOf(settings, "boltColor", DEFAULT_BOLT.charging);
+  const idle = colorOf(settings, "boltIdleColor", DEFAULT_BOLT.idle);
+  const value: JsonValue | undefined = settings.showBolt;
+  const show = BOLT_SHOWN.find((shown) => shown === value);
+  if (show === undefined && value !== undefined) {
+    logger.warn(
+      `Setting showBolt is ${JSON.stringify(value)}, not one of ${BOLT_SHOWN.join(", ")}: using ${DEFAULT_BOLT.show}`,
+    );
+  }
+  return { show: show ?? DEFAULT_BOLT.show, charging, idle };
 }
 
 /**
