@@ -1,32 +1,40 @@
 import {
   action,
+  type DidReceiveSettingsEvent,
   type KeyAction,
   type KeyDownEvent,
   SingletonAction,
   type WillAppearEvent,
   type WillDisappearEvent,
 } from "@elgato/streamdeck";
-import type { JsonObject } from "@elgato/utils";
+import type { JsonObject, JsonValue } from "@elgato/utils";
 
 import { type Battery, readBattery } from "../battery";
 import { logger as pluginLogger } from "../logging";
-import { batteryImage } from "./battery-image";
+import { batteryImage, DEFAULT_BACKGROUND, type Style } from "./battery-image";
 
 const logger = pluginLogger.createScope("Battery key");
 
 /** How often the battery is read again while a Battery key is shown: it drains slowly, and every read wakes the mouse. */
 export const REFRESH_MS = 10 * 60 * 1000;
 
+// A color as the settings page's color picker saves it: `#` and six hex digits.
+const COLOR = /^#[0-9a-f]{6}$/i;
+
+/** A key shown, and how it draws the reading, from its settings. */
+type Shown = { key: KeyAction<JsonObject>; style: Style };
+
 /**
  * The Battery key: shows how full the mouse's battery is, the level the mouse puts that at, and whether it's charging,
  * redrawing its image from each reading. Every key shows the same reading, since there's one mouse. The battery is read
  * when a key appears, when one is pressed, and every {@link REFRESH_MS} while one is shown. A mouse that doesn't answer,
- * such as one on another host, greys the key out, keeping the last reading.
+ * such as one on another host, greys the key out, keeping the last reading. Each key draws it on the background its
+ * settings choose.
  */
 @action({ UUID: "com.daczarne.mx3s.battery" })
 export class BatteryAction extends SingletonAction {
-  // The keys shown, by id, which every reading redraws.
-  private readonly keys = new Map<string, KeyAction<JsonObject>>();
+  // The keys shown, by id, with their styles, which every reading redraws.
+  private readonly keys = new Map<string, Shown>();
   // The last reading, and whether the mouse answered the last read.
   private battery: Battery | undefined;
   private found = false;
@@ -39,10 +47,21 @@ export class BatteryAction extends SingletonAction {
     if (!ev.action.isKey()) {
       return;
     }
-    this.keys.set(ev.action.id, ev.action);
+    const shown = { key: ev.action, style: styleOf(ev.payload.settings) };
+    this.keys.set(ev.action.id, shown);
     this.timer ??= setInterval(() => this.refresh(), REFRESH_MS);
-    await this.show(ev.action);
+    await this.show(shown);
     await this.refresh();
+  }
+
+  /** Redraws a key in the style its settings page chose, without reading the battery again. */
+  override async onDidReceiveSettings(ev: DidReceiveSettingsEvent): Promise<void> {
+    const shown = this.keys.get(ev.action.id);
+    if (shown === undefined) {
+      return;
+    }
+    shown.style = styleOf(ev.payload.settings);
+    await this.show(shown);
   }
 
   /** Forgets a key that's no longer shown, and stops reading once none is. */
@@ -75,15 +94,35 @@ export class BatteryAction extends SingletonAction {
     if (result.ok) {
       this.battery = result.battery;
     }
-    await Promise.all([...this.keys.values()].map((key) => this.show(key)));
+    await Promise.all([...this.keys.values()].map((shown) => this.show(shown)));
   }
 
   /** Draws the last reading on a key. A key that can't be drawn on is only logged: it's drawn again on the next read. */
-  private async show(key: KeyAction<JsonObject>): Promise<void> {
+  private async show({ key, style }: Shown): Promise<void> {
     try {
-      await key.setImage(batteryImage({ battery: this.battery, found: this.found }));
+      await key.setImage(batteryImage({ battery: this.battery, found: this.found }, style));
     } catch (error) {
       logger.warn("Can't draw a Battery key", error);
     }
   }
+}
+
+/**
+ * The style a key's settings choose: no background when `noBackground` is checked, and otherwise the color
+ * `background` holds. A key that has none yet takes the default, and so does one whose color isn't one, with a
+ * warning.
+ */
+export function styleOf(settings: JsonObject): Style {
+  if (settings.noBackground === true) {
+    return { background: undefined };
+  }
+  const value: JsonValue | undefined = settings.background;
+  if (value === undefined) {
+    return { background: DEFAULT_BACKGROUND };
+  }
+  if (typeof value === "string" && COLOR.test(value)) {
+    return { background: value };
+  }
+  logger.warn(`Setting background is ${JSON.stringify(value)}, not a color: using ${DEFAULT_BACKGROUND}`);
+  return { background: DEFAULT_BACKGROUND };
 }

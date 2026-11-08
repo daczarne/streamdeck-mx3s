@@ -8,7 +8,7 @@ The unit tests check against emulated receivers how the plugin reads the battery
 
 ## When to run these checks
 
-- After a change to `src/battery.ts`, `src/mouse.ts`, `src/actions/battery.ts` or `src/actions/battery-image.ts`, or to the key's images.
+- After a change to `src/battery.ts`, `src/mouse.ts`, `src/actions/battery.ts` or `src/actions/battery-image.ts`, to the key's images or to its settings page.
 - After an update of `@daczarne/streamdeck-icons`, whose glyphs, palette and figures the key is drawn from.
 - After an upgrade of `node-hid`, `@elgato/streamdeck` or `@elgato/utils`.
 - After a Stream Deck or macOS update.
@@ -38,5 +38,6 @@ tail -n 5 com.daczarne.mx3s.sdPlugin/logs/mx3s.log
 6. **The key shows dashes before the first reading.** Unplug this computer's receiver, and restart the plugin: the key shows the mouse and an empty battery in grey, with three dashes, and the log says `No Logi Bolt receiver found`. Plug the receiver back in, and press the key: it shows the reading.
 7. **The key reads again every 10 minutes.** Leave the key shown, without pressing it, for a little over 10 minutes: the log has a new `Read the MX Master 3S's battery` line about 10 minutes after the one before.
 8. **Every key shows the same reading, and none reads while none is shown.** With two Battery keys shown, press one: both show the new reading, and the log has one `Read` line. Switch to a profile or page with no Battery key for a little over 10 minutes: the log has no `Read` line in that time.
+9. **Each key keeps the background it chooses.** On a key's settings page, the background shows the charcoal of the key as placed, with **None** beside it on the same row, and the palette's 16 tiles under them, by hue, then the greys. Pick another color: the key takes it once the picker closes, and the log has no new `Read` line. Click a tile: the key and the picker both take its color, at once. Pick a color by hand, then click a tile: the picker shows the tile's color. With **None** checked, click a tile: **None** unchecks, and the key takes the tile. Check **None**: the key turns black behind the mouse, the battery and the percentage, whatever the color picked, and back to that color once unchecked. Another Battery key keeps its own background throughout, and both keep theirs through the next press and across a restart of the plugin.
 
 [probes]: ../../scripts/probes/README.md

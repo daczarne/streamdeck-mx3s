@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+  <head lang="en">
+    <title>MX Master 3S Battery</title>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'none';
+        script-src 'self';
+        style-src 'unsafe-inline';
+        img-src data:;
+        connect-src ws://localhost:*;
+        base-uri 'none';
+        form-action 'none'
+      "
+    />
+    <script src="vendor/sdpi-components.js"></script>
+    <style>
+      /* The color picker, narrow, with None beside it on the same row. */
+      .background {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .background sdpi-color {
+        flex: 0 0 72px;
+      }
+
+      /* The palette's tiles, two rows of eight across the content column. */
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 4px;
+      }
+
+      .swatch {
+        aspect-ratio: 1;
+        padding: 0;
+        border: 1px solid rgb(255 255 255 / 25%);
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      .swatch:hover,
+      .swatch:focus-visible {
+        border-color: rgb(255 255 255 / 80%);
+        outline: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- The key's background, the palette's charcoal tile until another color is picked, or none at all, which leaves
+         the key black behind the image. A checkbox that starts unchecked has no default, since `default="false"`
+         would check it. -->
+    <sdpi-item label="Background">
+      <div class="background">
+        <sdpi-color setting="background" default="#2B2E33"></sdpi-color>
+        <sdpi-checkbox setting="noBackground" label="None"></sdpi-checkbox>
+      </div>
+    </sdpi-item>
+    <!-- The palette's tiles, by hue, then the neutrals, from dark to light: a click picks one (battery.js). -->
+    <sdpi-item>
+      <div class="swatches">
+        <button type="button" class="swatch" data-color="#D64541" title="red" style="background-color: #D64541"></button>
+        <button type="button" class="swatch" data-color="#8C5648" title="rust" style="background-color: #8C5648"></button>
+        <button type="button" class="swatch" data-color="#E3B547" title="honey" style="background-color: #E3B547"></button>
+        <button type="button" class="swatch" data-color="#7A6A2A" title="olive" style="background-color: #7A6A2A"></button>
+        <button type="button" class="swatch" data-color="#3E6B4A" title="green" style="background-color: #3E6B4A"></button>
+        <button type="button" class="swatch" data-color="#2F4A3A" title="forest" style="background-color: #2F4A3A"></button>
+        <button type="button" class="swatch" data-color="#3F6E6E" title="teal" style="background-color: #3F6E6E"></button>
+        <button type="button" class="swatch" data-color="#2E4A6B" title="navy" style="background-color: #2E4A6B"></button>
+        <button type="button" class="swatch" data-color="#4C5F86" title="blue" style="background-color: #4C5F86"></button>
+        <button type="button" class="swatch" data-color="#5546A0" title="violet" style="background-color: #5546A0"></button>
+        <button type="button" class="swatch" data-color="#3E2F45" title="aubergine" style="background-color: #3E2F45"></button>
+        <button type="button" class="swatch" data-color="#6E4F70" title="plum" style="background-color: #6E4F70"></button>
+        <button type="button" class="swatch" data-color="#A03F68" title="cerise" style="background-color: #A03F68"></button>
+        <button type="button" class="swatch" data-color="#2B2E33" title="charcoal" style="background-color: #2B2E33"></button>
+        <button type="button" class="swatch" data-color="#484C52" title="slate" style="background-color: #484C52"></button>
+        <button type="button" class="swatch" data-color="#9AA0A8" title="grey" style="background-color: #9AA0A8"></button>
+      </div>
+    </sdpi-item>
+    <script src="battery.js"></script>
+  </body>
+
+</html>
