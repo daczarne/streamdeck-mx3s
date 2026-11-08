@@ -179,9 +179,9 @@ To update it, download `dist/sdpi-components.js` from the new upstream tag (not 
 The plugin is MIT licensed: see [`LICENSE`][license].
 
 [#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
+[bug-report]: https://github.com/daczarne/streamdeck-mx3s/issues/new?template=bug_report.yaml
 [check-ui]: scripts/check-ui.mjs
 [contributing]: docs/contributing.md
-[bug-report]: https://github.com/daczarne/streamdeck-mx3s/issues/new?template=bug_report.yaml
 [issues]: https://github.com/daczarne/streamdeck-mx3s/issues
 [latest-release]: https://github.com/daczarne/streamdeck-mx3s/releases/latest
 [license]: LICENSE
