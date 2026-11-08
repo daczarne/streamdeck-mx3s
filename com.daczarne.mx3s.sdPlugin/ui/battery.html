@@ -68,6 +68,20 @@
         <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
       </div>
     </sdpi-item>
+    <!-- The battery in the key's top row: shown, or not, which leaves the mouse and the bolt where they are. It takes
+         the color of its level, so under Show, Follow battery level stands checked, and the color picker, the green of
+         a full battery, does nothing: both are disabled, with no setting, until a battery can take a color of its own. -->
+    <sdpi-item label="Battery icon">
+      <div class="row">
+        <sdpi-checkbox setting="showBattery" default="true" label="Show"></sdpi-checkbox>
+      </div>
+    </sdpi-item>
+    <sdpi-item>
+      <div class="row">
+        <sdpi-color default="#4CBF68" disabled></sdpi-color>
+        <sdpi-checkbox label="Follow battery level" default="true" disabled></sdpi-checkbox>
+      </div>
+    </sdpi-item>
   </body>
 
 </html>

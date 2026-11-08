@@ -17,8 +17,8 @@ function reading(battery: Partial<Battery> = {}): Battery {
   return { percentage: 95, level: "full", charging: false, ...battery };
 }
 
-// The default style: the charcoal tile, and the filled white mouse.
-const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE };
+// The default style: the charcoal tile, the filled white mouse, and the battery.
+const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true };
 
 /** The colors an SVG uses, for its fills and strokes. */
 function colors(svg: string): Set<string> {
@@ -92,14 +92,14 @@ describe("its background", () => {
   });
 
   it("is the color the key chooses", () => {
-    const svg = batterySvg({ battery: reading(), found: true }, { background: "#123456", mouse: DEFAULT_MOUSE });
+    const svg = batterySvg({ battery: reading(), found: true }, { ...TILE, background: "#123456" });
 
     expect(svg).toContain(`<rect width="144" height="144" fill="#123456"/>`);
     expect(colors(svg)).not.toContain(TILES.charcoal);
   });
 
   it("is left out when the key chooses none, so the image is transparent", () => {
-    const svg = batterySvg({ battery: reading(), found: true }, { background: undefined, mouse: DEFAULT_MOUSE });
+    const svg = batterySvg({ battery: reading(), found: true }, { ...TILE, background: undefined });
 
     expect(svg).not.toContain("<rect");
     expect(colors(svg)).toEqual(new Set([WHITE, ACCENTS.leaf]));
@@ -140,6 +140,20 @@ describe("its mouse", () => {
     expect(colors(without)).toEqual(new Set([TILES.charcoal, ACCENTS.leaf]));
     const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
     expect(placed(without)).toEqual(placed(batterySvg(shown, TILE)).slice(1));
+  });
+});
+
+describe("its battery", () => {
+  it("is left out when the key chooses not to show it, with the mouse, the bolt and the percentage where they were", () => {
+    const shown = { battery: reading({ charging: true }), found: true };
+
+    const without = batterySvg(shown, { ...TILE, showBattery: false });
+
+    expect(without).not.toContain(batteryGlyph(144 * 0.34, { charge: 0.95, color: ACCENTS.leaf }));
+    expect(without).toContain(percentageGlyph(144, { percentage: 95, color: ACCENTS.leaf }));
+    const placed = (svg: string) => [...svg.matchAll(/<g transform="translate\(([^)]+)\)">/g)].map((match) => match[1]);
+    const all = placed(batterySvg(shown, TILE));
+    expect(placed(without)).toEqual([all[0], ...all.slice(2)]);
   });
 });
 

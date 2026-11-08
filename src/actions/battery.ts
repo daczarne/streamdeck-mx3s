@@ -29,7 +29,7 @@ type Shown = { key: KeyAction<JsonObject>; style: Style };
  * redrawing its image from each reading. Every key shows the same reading, since there's one mouse. The battery is read
  * when a key appears, when one is pressed, and every {@link REFRESH_MS} while one is shown. A mouse that doesn't answer,
  * such as one on another host, greys the key out, keeping the last reading. Each key draws it on the background its
- * settings choose, with the mouse they choose.
+ * settings choose, with the mouse and the battery they choose.
  */
 @action({ UUID: "com.daczarne.mx3s.battery" })
 export class BatteryAction extends SingletonAction {
@@ -107,9 +107,12 @@ export class BatteryAction extends SingletonAction {
   }
 }
 
-/** The style a key's settings choose: its background, and its mouse. */
+/**
+ * The style a key's settings choose: its background, its mouse, and whether it shows the battery, which it does unless
+ * `showBattery` is unchecked.
+ */
 export function styleOf(settings: JsonObject): Style {
-  return { background: backgroundOf(settings), mouse: mouseOf(settings) };
+  return { background: backgroundOf(settings), mouse: mouseOf(settings), showBattery: settings.showBattery !== false };
 }
 
 /**

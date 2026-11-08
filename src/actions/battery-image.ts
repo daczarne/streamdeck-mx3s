@@ -1,9 +1,9 @@
 /**
  * The Battery key's image, drawn afresh from each reading: the mouse, the battery and, while it charges, a bolt in a
  * row across the top, and the percentage below them, on a background each key chooses, the palette's charcoal tile
- * unless it chooses another, or none. Each key also chooses its mouse: its color, filled or outlined, or none, which
- * leaves the battery and the bolt where they are. Its colors follow the level the mouse puts its charge at, and turn grey once the
- * mouse isn't found, keeping the last reading.
+ * unless it chooses another, or none. Each key also chooses its mouse: its color, filled or outlined, or none, and
+ * whether it shows the battery. Leaving one out leaves the others where they are. Its colors follow the level the mouse
+ * puts its charge at, and turn grey once the mouse isn't found, keeping the last reading.
  */
 import {
   ACCENTS,
@@ -56,9 +56,10 @@ export type MouseStyle = { color: string; filled: boolean };
 
 /**
  * How a key draws what it shows: its background, a color such as `#2B2E33`, or none, which leaves the image
- * transparent, so the key shows Stream Deck's own black behind it, and its mouse, or none.
+ * transparent, so the key shows Stream Deck's own black behind it, its mouse, or none, and whether it shows the
+ * battery, which always takes the color of its level.
  */
-export type Style = { background: string | undefined; mouse: MouseStyle | undefined };
+export type Style = { background: string | undefined; mouse: MouseStyle | undefined; showBattery: boolean };
 
 /** The key's image, as a data URL Stream Deck takes for `setImage`. */
 export function batteryImage(shown: Shown, style: Style): string {
@@ -66,7 +67,7 @@ export function batteryImage(shown: Shown, style: Style): string {
 }
 
 /** The key's image, as an SVG document. */
-export function batterySvg({ battery, found }: Shown, { background, mouse }: Style): string {
+export function batterySvg({ battery, found }: Shown, { background, mouse, showBattery }: Style): string {
   const color = found && battery !== undefined ? levelColor(battery) : NOT_FOUND;
   const cell = SIZE * CELL;
   const place = (center: number, glyph: string) =>
@@ -76,10 +77,12 @@ export function batterySvg({ battery, found }: Shown, { background, mouse }: Sty
     mouse === undefined
       ? ""
       : place(CENTERS[0], mouseGlyph(cell, { color: found ? mouse.color : NOT_FOUND, filled: mouse.filled })),
-    place(
-      CENTERS[1],
-      batteryGlyph(cell, battery === undefined ? { color } : { charge: battery.percentage / 100, color }),
-    ),
+    showBattery
+      ? place(
+          CENTERS[1],
+          batteryGlyph(cell, battery === undefined ? { color } : { charge: battery.percentage / 100, color }),
+        )
+      : "",
     battery?.charging === true ? place(CENTERS[2], boltGlyph(cell, { color: found ? ACCENTS.leaf : NOT_FOUND })) : "",
     `<g transform="translate(0 ${SIZE * NUMBER_DROP})">${percentageGlyph(SIZE, battery === undefined ? { color } : { percentage: battery.percentage, color })}</g>`,
   ];
