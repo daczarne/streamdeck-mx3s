@@ -1,13 +1,19 @@
 import { readFileSync } from "node:fs";
 
-import { ACCENTS } from "@daczarne/streamdeck-icons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type Battery, type BatteryResult, readBattery } from "../battery";
 import { logger } from "../logging";
 import { FakeDeck } from "../test-support/fake-deck";
 import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
-import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_BOLT, DEFAULT_LEVELS, DEFAULT_MOUSE } from "./battery-image";
+import {
+  batteryImage,
+  DEFAULT_BACKGROUND,
+  DEFAULT_BATTERY,
+  DEFAULT_BOLT,
+  DEFAULT_LEVELS,
+  DEFAULT_MOUSE,
+} from "./battery-image";
 
 //* Fakes
 
@@ -30,7 +36,7 @@ const LOW: Battery = { percentage: 20, level: "low", charging: true };
 const TILE = {
   background: DEFAULT_BACKGROUND,
   mouse: DEFAULT_MOUSE,
-  showBattery: true,
+  battery: DEFAULT_BATTERY,
   bolt: DEFAULT_BOLT,
   levels: DEFAULT_LEVELS,
 };
@@ -219,9 +225,11 @@ describe("styleOf", () => {
   });
 
   it.each([
-    ["a mouse color", { mouseColor: "#a1b2c3" }, { color: "#a1b2c3", filled: true }],
-    ["an outlined mouse", { mouseStyle: "outlined" }, { color: DEFAULT_MOUSE.color, filled: false }],
-    ["a filled mouse", { mouseStyle: "filled" }, { color: DEFAULT_MOUSE.color, filled: true }],
+    ["a mouse color", { mouseColor: "#a1b2c3" }, { ...DEFAULT_MOUSE, color: "#a1b2c3" }],
+    ["an outlined mouse", { mouseStyle: "outlined" }, { ...DEFAULT_MOUSE, filled: false }],
+    ["a filled mouse", { mouseStyle: "filled" }, { ...DEFAULT_MOUSE, filled: true }],
+    ["the mouse following the level", { mouseFollowsLevel: true }, { ...DEFAULT_MOUSE, followsLevel: true }],
+    ["the mouse in its own color", { mouseFollowsLevel: false }, DEFAULT_MOUSE],
     ["no mouse", { mouseColor: "#a1b2c3", showMouse: false }, undefined],
     ["the mouse shown", { showMouse: true }, DEFAULT_MOUSE],
   ])("takes %s", (_case, settings, mouse) => {
@@ -229,11 +237,17 @@ describe("styleOf", () => {
   });
 
   it.each([
-    ["the battery hidden", { showBattery: false }, false],
-    ["the battery shown", { showBattery: true }, true],
-    ["nothing chosen for the battery", {}, true],
-  ])("takes %s", (_case, settings, showBattery) => {
-    expect(styleOf(settings)).toEqual({ ...TILE, showBattery });
+    ["the battery hidden", { showBattery: false, batteryColor: "#a1b2c3" }, undefined],
+    ["the battery shown", { showBattery: true }, DEFAULT_BATTERY],
+    ["nothing chosen for the battery", {}, DEFAULT_BATTERY],
+    [
+      "the battery in its own color",
+      { batteryFollowsLevel: false, batteryColor: "#a1b2c3" },
+      { color: "#a1b2c3", followsLevel: false },
+    ],
+    ["the battery following the level", { batteryFollowsLevel: true }, DEFAULT_BATTERY],
+  ])("takes %s", (_case, settings, battery) => {
+    expect(styleOf(settings)).toEqual({ ...TILE, battery });
   });
 
   it.each([
@@ -243,8 +257,9 @@ describe("styleOf", () => {
     [
       "the bolt's colors",
       { boltColor: "#a1b2c3", boltIdleColor: "#c3b2a1" },
-      { show: "charging", charging: "#a1b2c3", idle: "#c3b2a1" },
+      { ...DEFAULT_BOLT, charging: "#a1b2c3", idle: "#c3b2a1" },
     ],
+    ["the bolt following the level", { boltFollowsLevel: true }, { ...DEFAULT_BOLT, chargingFollowsLevel: true }],
   ])("takes %s", (_case, settings, bolt) => {
     expect(styleOf(settings)).toEqual({ ...TILE, bolt });
   });
@@ -288,6 +303,16 @@ describe("styleOf", () => {
     );
   });
 
+  it.each([["mouseFollowsLevel"], ["batteryFollowsLevel"], ["boltFollowsLevel"]])(
+    "takes the default, with a warning, for a %s that isn't true or false",
+    (setting) => {
+      expect(styleOf({ [setting]: "yes" })).toEqual(TILE);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringMatching(new RegExp(`^Setting ${setting} is "yes", not true or false: using (true|false)$`)),
+      );
+    },
+  );
+
   it("takes the default mouse color and style, with a warning, for a setting that isn't one", () => {
     expect(styleOf({ mouseColor: "white", mouseStyle: "dotted" })).toEqual(TILE);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -312,8 +337,13 @@ describe("styleOf", () => {
     expect(/<sdpi-radio setting="showBolt" default="([a-z]+)"/.exec(page)?.[1]).toBe(DEFAULT_BOLT.show);
     expect(color("boltColor")).toBe(DEFAULT_BOLT.charging.toUpperCase());
     expect(color("boltIdleColor")).toBe(DEFAULT_BOLT.idle.toUpperCase());
-    // The battery takes its level's color, which the disabled picker shows for a high one.
-    expect(page).toContain(`<sdpi-color default="${ACCENTS.leaf}" disabled>`);
+    expect(color("batteryColor")).toBe(DEFAULT_BATTERY.color.toUpperCase());
+    // Each Follow battery level checkbox starts checked when its element follows the level by default.
+    const follows = (setting: string, followsLevel: boolean) =>
+      `<sdpi-checkbox setting="${setting}" ${followsLevel ? 'default="true" ' : ""}label="Follow battery level">`;
+    expect(page).toContain(follows("mouseFollowsLevel", DEFAULT_MOUSE.followsLevel));
+    expect(page).toContain(follows("batteryFollowsLevel", DEFAULT_BATTERY.followsLevel));
+    expect(page).toContain(follows("boltFollowsLevel", DEFAULT_BOLT.chargingFollowsLevel));
     expect(color("highColor")).toBe(DEFAULT_LEVELS.high.toUpperCase());
     expect(color("mediumColor")).toBe(DEFAULT_LEVELS.medium.toUpperCase());
     expect(color("lowColor")).toBe(DEFAULT_LEVELS.low.toUpperCase());
@@ -352,7 +382,15 @@ describe("the settings page", () => {
     for (const [, element, setting] of dependents) {
       expect(page).toContain(`<${element} setting="${setting}"`);
     }
-    expect(switches).toEqual(["noBackground", "showMouse", "showBolt"]);
+    expect(switches).toEqual([
+      "noBackground",
+      "showMouse",
+      "mouseFollowsLevel",
+      "showBattery",
+      "batteryFollowsLevel",
+      "showBolt",
+      "boltFollowsLevel",
+    ]);
     for (const setting of switches) {
       expect(page).toContain(`setting="${setting}"`);
     }

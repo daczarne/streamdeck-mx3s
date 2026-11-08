@@ -93,8 +93,8 @@
     </section>
 
     <!-- The mouse in the key's top row: shown, or not, which leaves the battery and the bolt where they are, filled or
-         outlined, and under them, its color, the palette's white until another is picked. Follow battery level isn't
-         built yet: disabled, and with no setting, it saves nothing. -->
+         outlined, and under them, its color, the palette's white until another is picked, or its level's, with Follow
+         battery level. -->
     <section>
       <h2 class="section-heading">Mouse icon</h2>
       <sdpi-item>
@@ -109,7 +109,7 @@
       <sdpi-item>
         <div class="row">
           <sdpi-color setting="mouseColor" default="#F2F2F2"></sdpi-color>
-          <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
+          <sdpi-checkbox setting="mouseFollowsLevel" label="Follow battery level"></sdpi-checkbox>
         </div>
       </sdpi-item>
       <sdpi-item>
@@ -117,9 +117,9 @@
       </sdpi-item>
     </section>
 
-    <!-- The battery in the key's top row: shown, or not, which leaves the mouse and the bolt where they are. It takes
-         the color of its level, so under Show, Follow battery level stands checked, and the color picker, the green of
-         the high level, does nothing: both are disabled, with no setting, until a battery can take a color of its own. -->
+    <!-- The battery in the key's top row: shown, or not, which leaves the mouse and the bolt where they are, and under
+         it, its color: its level's, with Follow battery level, checked until it's unchecked, and otherwise the one
+         picked, the palette's green until another is. -->
     <section>
       <h2 class="section-heading">Battery icon</h2>
       <sdpi-item>
@@ -129,8 +129,8 @@
       </sdpi-item>
       <sdpi-item>
         <div class="row">
-          <sdpi-color default="#4CBF68" disabled></sdpi-color>
-          <sdpi-checkbox label="Follow battery level" default="true" disabled></sdpi-checkbox>
+          <sdpi-color setting="batteryColor" default="#4CBF68"></sdpi-color>
+          <sdpi-checkbox setting="batteryFollowsLevel" default="true" label="Follow battery level"></sdpi-checkbox>
         </div>
       </sdpi-item>
       <sdpi-item>
@@ -140,8 +140,8 @@
 
     <!-- The bolt at the right of the key's top row: shown always, only while the mouse charges, or never, which leaves
          the others where they are. Its color while charging, the palette's green, and, for a key that shows it always,
-         its color while not, the palette's slate, dim on the charcoal tile. Follow battery level isn't built yet:
-         disabled, and with no setting, it saves nothing. -->
+         its color while not, the palette's slate, dim on the charcoal tile. While charging, it can take its level's
+         color instead, with Follow battery level. -->
     <section>
       <h2 class="section-heading">Bolt icon</h2>
       <sdpi-item>
@@ -154,7 +154,7 @@
       <sdpi-item label="Charging">
         <div class="row">
           <sdpi-color setting="boltColor" default="#4CBF68"></sdpi-color>
-          <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
+          <sdpi-checkbox setting="boltFollowsLevel" label="Follow battery level"></sdpi-checkbox>
         </div>
       </sdpi-item>
       <sdpi-item label="Not charging">
@@ -167,10 +167,10 @@
       </sdpi-item>
     </section>
 
-    <!-- The levels the battery and the percentage take their colors from, by the percentage the mouse reports: medium,
-         the palette's gold, between 15% and 40%, high, its green, above, and low, its scarlet, below. Medium's two
-         percentages go in either order, and high's and low's are the higher and the lower of them, which battery.js
-         writes out. -->
+    <!-- The levels the percentage takes its color from, as do the icons that follow them, by the percentage the mouse
+         reports: medium, the palette's gold, between 15% and 40%, high, its green, above, and low, its scarlet, below.
+         Medium's two percentages go in either order, and high's and low's are the higher and the lower of them, which
+         battery.js writes out. -->
     <section>
       <h2 class="section-heading">Battery level</h2>
       <sdpi-item label="High">
