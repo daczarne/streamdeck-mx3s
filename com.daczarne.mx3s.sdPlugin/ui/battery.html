@@ -36,74 +36,121 @@
         flex: 0 0 150px;
         margin-left: auto;
       }
+
+      /* Each section's heading, across the page, with a line under it, as the Litra plugin's settings draw theirs.
+         Outside sdpi-components' rows, so in its font and text color, written out. */
+      .section-heading {
+        border-bottom: 1px solid #666;
+        color: #d8d8d8;
+        font-family: "Segoe UI", Arial, Roboto, Helvetica, sans-serif;
+        font-size: 11pt;
+        font-weight: 600;
+        margin: 16px 0 8px;
+        padding-bottom: 4px;
+      }
+
+      section:first-of-type .section-heading {
+        margin-top: 0;
+      }
     </style>
   </head>
 
   <body>
+    <!-- Each section ends with a Reset button, which brings the section's settings back to their defaults (battery.js).
+         A checkbox's `default` is text, which checks it whatever it says: a checkbox that starts checked has one, and
+         one that starts unchecked has none. -->
+
     <!-- The key's background, the palette's charcoal tile until another color is picked, or none at all, which leaves
-         the key black behind the image. A checkbox that starts unchecked has no default, since `default="false"`
-         would check it. -->
-    <sdpi-item label="Background">
-      <div class="row">
-        <sdpi-color setting="background" default="#2B2E33"></sdpi-color>
-        <sdpi-checkbox setting="noBackground" label="None"></sdpi-checkbox>
-      </div>
-    </sdpi-item>
+         the key black behind the image. -->
+    <section>
+      <h2 class="section-heading">Background</h2>
+      <sdpi-item>
+        <div class="row">
+          <sdpi-color setting="background" default="#2B2E33"></sdpi-color>
+          <sdpi-checkbox setting="noBackground" label="None"></sdpi-checkbox>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <sdpi-button class="reset">Reset</sdpi-button>
+      </sdpi-item>
+    </section>
+
     <!-- The mouse in the key's top row: shown, or not, which leaves the battery and the bolt where they are, filled or
-         outlined, and under them, its color, the palette's white until another is picked. A checkbox's `default` is
-         text, which checks it whatever it says, so Show starts checked. -->
-    <sdpi-item label="Mouse icon">
-      <div class="row">
-        <sdpi-checkbox setting="showMouse" default="true" label="Show"></sdpi-checkbox>
-        <sdpi-radio setting="mouseStyle" default="filled" columns="2">
-          <option value="filled">Filled</option>
-          <option value="outlined">Outlined</option>
-        </sdpi-radio>
-      </div>
-    </sdpi-item>
-    <!-- Follow battery level isn't built yet: disabled, and with no setting, it saves nothing. -->
-    <sdpi-item>
-      <div class="row">
-        <sdpi-color setting="mouseColor" default="#F2F2F2"></sdpi-color>
-        <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
-      </div>
-    </sdpi-item>
+         outlined, and under them, its color, the palette's white until another is picked. Follow battery level isn't
+         built yet: disabled, and with no setting, it saves nothing. -->
+    <section>
+      <h2 class="section-heading">Mouse icon</h2>
+      <sdpi-item>
+        <div class="row">
+          <sdpi-checkbox setting="showMouse" default="true" label="Show"></sdpi-checkbox>
+          <sdpi-radio setting="mouseStyle" default="filled" columns="2">
+            <option value="filled">Filled</option>
+            <option value="outlined">Outlined</option>
+          </sdpi-radio>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <div class="row">
+          <sdpi-color setting="mouseColor" default="#F2F2F2"></sdpi-color>
+          <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <sdpi-button class="reset">Reset</sdpi-button>
+      </sdpi-item>
+    </section>
+
     <!-- The battery in the key's top row: shown, or not, which leaves the mouse and the bolt where they are. It takes
          the color of its level, so under Show, Follow battery level stands checked, and the color picker, the green of
          a full battery, does nothing: both are disabled, with no setting, until a battery can take a color of its own. -->
-    <sdpi-item label="Battery icon">
-      <div class="row">
-        <sdpi-checkbox setting="showBattery" default="true" label="Show"></sdpi-checkbox>
-      </div>
-    </sdpi-item>
-    <sdpi-item>
-      <div class="row">
-        <sdpi-color default="#4CBF68" disabled></sdpi-color>
-        <sdpi-checkbox label="Follow battery level" default="true" disabled></sdpi-checkbox>
-      </div>
-    </sdpi-item>
+    <section>
+      <h2 class="section-heading">Battery icon</h2>
+      <sdpi-item>
+        <div class="row">
+          <sdpi-checkbox setting="showBattery" default="true" label="Show"></sdpi-checkbox>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <div class="row">
+          <sdpi-color default="#4CBF68" disabled></sdpi-color>
+          <sdpi-checkbox label="Follow battery level" default="true" disabled></sdpi-checkbox>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <sdpi-button class="reset">Reset</sdpi-button>
+      </sdpi-item>
+    </section>
+
     <!-- The bolt at the right of the key's top row: shown always, only while the mouse charges, or never, which leaves
          the others where they are. Its color while charging, the palette's green, and, for a key that shows it always,
          its color while not, the palette's slate, dim on the charcoal tile. Follow battery level isn't built yet:
          disabled, and with no setting, it saves nothing. -->
-    <sdpi-item label="Bolt icon">
-      <sdpi-radio setting="showBolt" default="charging" columns="3">
-        <option value="always">Always</option>
-        <option value="charging">Charging</option>
-        <option value="never">Never</option>
-      </sdpi-radio>
-    </sdpi-item>
-    <sdpi-item label="Charging">
-      <div class="row">
-        <sdpi-color setting="boltColor" default="#4CBF68"></sdpi-color>
-        <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
-      </div>
-    </sdpi-item>
-    <sdpi-item label="Not charging">
-      <div class="row">
-        <sdpi-color setting="boltIdleColor" default="#484C52"></sdpi-color>
-      </div>
-    </sdpi-item>
+    <section>
+      <h2 class="section-heading">Bolt icon</h2>
+      <sdpi-item>
+        <sdpi-radio setting="showBolt" default="charging" columns="3">
+          <option value="always">Always</option>
+          <option value="charging">Charging</option>
+          <option value="never">Never</option>
+        </sdpi-radio>
+      </sdpi-item>
+      <sdpi-item label="Charging">
+        <div class="row">
+          <sdpi-color setting="boltColor" default="#4CBF68"></sdpi-color>
+          <sdpi-checkbox label="Follow battery level" disabled></sdpi-checkbox>
+        </div>
+      </sdpi-item>
+      <sdpi-item label="Not charging">
+        <div class="row">
+          <sdpi-color setting="boltIdleColor" default="#484C52"></sdpi-color>
+        </div>
+      </sdpi-item>
+      <sdpi-item>
+        <sdpi-button class="reset">Reset</sdpi-button>
+      </sdpi-item>
+    </section>
+
+    <script src="battery.js"></script>
   </body>
 
 </html>

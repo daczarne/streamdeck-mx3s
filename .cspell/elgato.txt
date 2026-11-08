@@ -4,3 +4,4 @@ sdignore
 sdpi
 showlabels
 streamdeck
+valuechange
