@@ -71,7 +71,7 @@ describe("batterySvg", () => {
     [10, "#222222"],
     [9, "#333333"],
   ])("colors a battery at %s%% by the levels the key chooses", (percentage, color) => {
-    const levels = { high: "#111111", highFrom: 80, medium: "#222222", mediumFrom: 10, low: "#333333" };
+    const levels = { high: "#111111", medium: "#222222", mediumFrom: 10, mediumTo: 80, low: "#333333" };
 
     const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
 
@@ -80,10 +80,22 @@ describe("batterySvg", () => {
   });
 
   it.each([
+    [80, "#111111"],
+    [50, "#222222"],
+    [9, "#333333"],
+  ])("takes the medium level's percentages in either order, at %s%%", (percentage, color) => {
+    const levels = { high: "#111111", medium: "#222222", mediumFrom: 80, mediumTo: 10, low: "#333333" };
+
+    const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
+
+    expect(colors(svg)).toContain(color);
+  });
+
+  it.each([
     [50, "#111111"],
     [49, "#333333"],
-  ])("skips the medium level when it starts as high as the high one, at %s%%", (percentage, color) => {
-    const levels = { high: "#111111", highFrom: 50, medium: "#222222", mediumFrom: 70, low: "#333333" };
+  ])("shows no medium level when its percentages are the same, at %s%%", (percentage, color) => {
+    const levels = { high: "#111111", medium: "#222222", mediumFrom: 50, mediumTo: 50, low: "#333333" };
 
     const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
 

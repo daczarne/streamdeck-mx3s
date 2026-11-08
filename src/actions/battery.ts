@@ -137,14 +137,14 @@ export function styleOf(settings: JsonObject): Style {
 
 /**
  * The levels a key's settings choose: their colors, from `highColor`, `mediumColor` and `lowColor`, and the
- * percentages the high and the medium levels start from, from `highFrom` and `mediumFrom`.
+ * percentages the medium level is between, from `mediumFrom` and `mediumTo`.
  */
 function levelsOf(settings: JsonObject): Levels {
   return {
     high: colorOf(settings, "highColor", DEFAULT_LEVELS.high),
-    highFrom: percentageOf(settings, "highFrom", DEFAULT_LEVELS.highFrom),
     medium: colorOf(settings, "mediumColor", DEFAULT_LEVELS.medium),
     mediumFrom: percentageOf(settings, "mediumFrom", DEFAULT_LEVELS.mediumFrom),
+    mediumTo: percentageOf(settings, "mediumTo", DEFAULT_LEVELS.mediumTo),
     low: colorOf(settings, "lowColor", DEFAULT_LEVELS.low),
   };
 }

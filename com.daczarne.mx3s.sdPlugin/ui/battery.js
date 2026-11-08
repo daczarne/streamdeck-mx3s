@@ -2,7 +2,8 @@
  * The Battery key's settings page: each section's Reset button, which brings the section's settings back to their
  * defaults, the `default` attribute each control has, or, for a checkbox without one, unchecked, the controls that say
  * nothing while a section's switch is off, such as the mouse's color while it isn't shown, greyed out, and the
- * percentage the low level is below, which is the one the medium level starts from. A control saves the value a script
+ * percentages the high level starts from and the low level is below, the higher and the lower of the two the medium
+ * level is between. A control saves the value a script
  * gives it, as it saves the user's, and reports every change of its value, the saved settings the page reads included,
  * with `valuechange`. The controls disabled on the page have no setting, and are left alone.
  */
@@ -72,15 +73,20 @@ function greyOut() {
 }
 
 /**
- * Writes out the percentage the low level is below: the one the medium level starts from, or, before it has one, its
- * default.
+ * Writes out the percentages the high level starts from and the low level is below: the higher and the lower of the
+ * two the medium level is between, or, before they have one, their defaults.
  *
  * @returns {void}
  */
-function showLowBelow() {
+function showBounds() {
+  const bounds = [Number(chosen("mediumFrom")), Number(chosen("mediumTo"))];
+  const from = document.getElementById("high-from");
   const below = document.getElementById("low-below");
+  if (from !== null) {
+    from.textContent = `from ${Math.max(...bounds)}%`;
+  }
   if (below !== null) {
-    below.textContent = `below ${chosen("mediumFrom")}%`;
+    below.textContent = `below ${Math.min(...bounds)}%`;
   }
 }
 
@@ -133,5 +139,7 @@ for (const setting of SWITCHES) {
 }
 greyOut();
 
-control("mediumFrom")?.addEventListener("valuechange", showLowBelow);
-showLowBelow();
+for (const setting of ["mediumFrom", "mediumTo"]) {
+  control(setting)?.addEventListener("valuechange", showBounds);
+}
+showBounds();

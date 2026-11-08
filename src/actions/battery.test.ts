@@ -252,24 +252,24 @@ describe("styleOf", () => {
   it("takes the levels' colors and percentages", () => {
     const settings = {
       highColor: "#111111",
-      highFrom: 80,
       mediumColor: "#222222",
       mediumFrom: 15,
+      mediumTo: 80,
       lowColor: "#333333",
     };
 
     expect(styleOf(settings)).toEqual({
       ...TILE,
-      levels: { high: "#111111", highFrom: 80, medium: "#222222", mediumFrom: 15, low: "#333333" },
+      levels: { high: "#111111", medium: "#222222", mediumFrom: 15, mediumTo: 80, low: "#333333" },
     });
   });
 
   it.each([["60"], [-5], [101], [null]])(
     "takes the default levels, with a warning, for a percentage of %s",
     (value) => {
-      expect(styleOf({ highFrom: value, mediumFrom: value })).toEqual(TILE);
+      expect(styleOf({ mediumFrom: value, mediumTo: value })).toEqual(TILE);
       expect(logger.warn).toHaveBeenCalledWith(
-        `Setting highFrom is ${JSON.stringify(value)}, not a percentage: using ${DEFAULT_LEVELS.highFrom}`,
+        `Setting mediumTo is ${JSON.stringify(value)}, not a percentage: using ${DEFAULT_LEVELS.mediumTo}`,
       );
       expect(logger.warn).toHaveBeenCalledWith(
         `Setting mediumFrom is ${JSON.stringify(value)}, not a percentage: using ${DEFAULT_LEVELS.mediumFrom}`,
@@ -319,8 +319,9 @@ describe("styleOf", () => {
     expect(color("lowColor")).toBe(DEFAULT_LEVELS.low.toUpperCase());
     const from = (setting: string) =>
       Number(new RegExp(`<sdpi-select setting="${setting}" default="(\\d+)" value-type="number">`).exec(page)?.[1]);
-    expect(from("highFrom")).toBe(DEFAULT_LEVELS.highFrom);
     expect(from("mediumFrom")).toBe(DEFAULT_LEVELS.mediumFrom);
+    expect(from("mediumTo")).toBe(DEFAULT_LEVELS.mediumTo);
+    expect(page).toContain(`<span class="note" id="high-from">from ${DEFAULT_LEVELS.mediumTo}%</span>`);
     expect(page).toContain(`<span class="note" id="low-below">below ${DEFAULT_LEVELS.mediumFrom}%</span>`);
   });
 

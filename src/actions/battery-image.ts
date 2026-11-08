@@ -45,14 +45,14 @@ export const DEFAULT_MOUSE: MouseStyle = { color: WHITE, filled: true };
 export const DEFAULT_BOLT: BoltStyle = { show: "charging", charging: ACCENTS.leaf, idle: TILES.slate };
 
 /**
- * The levels a key colors a battery by unless it chooses others: high, in the palette's green, from 60%, medium, in its
- * gold, from 30%, and low, in its scarlet, below that.
+ * The levels a key colors a battery by unless it chooses others: medium, in the palette's gold, between 30% and 60%,
+ * high, in its green, above, and low, in its scarlet, below.
  */
 export const DEFAULT_LEVELS: Levels = {
   high: ACCENTS.leaf,
-  highFrom: 60,
   medium: ACCENTS.gold,
   mediumFrom: 30,
+  mediumTo: 60,
   low: ACCENTS.scarlet,
 };
 
@@ -63,11 +63,11 @@ export type Shown = { battery: Battery | undefined; found: boolean };
 export type MouseStyle = { color: string; filled: boolean };
 
 /**
- * The levels a key colors a battery by: high from `highFrom`%, medium from `mediumFrom`%, and low below that, each in
- * its color. A battery that reaches `highFrom` is high whatever `mediumFrom` is, so a medium level from as high or
- * higher is never shown.
+ * The levels a key colors a battery by, each in its color: medium between `mediumFrom`% and `mediumTo`%, in either
+ * order, high from the higher of the two, and low below the lower. A medium level whose two percentages are the same
+ * is never shown.
  */
-export type Levels = { high: string; highFrom: number; medium: string; mediumFrom: number; low: string };
+export type Levels = { high: string; medium: string; mediumFrom: number; mediumTo: number; low: string };
 
 /** When a key shows the bolt: always, only while the mouse charges, or never. */
 export type BoltShown = "always" | "charging" | "never";
@@ -130,12 +130,12 @@ function boltColor({ charging, idle }: BoltStyle, battery: Battery | undefined, 
 }
 
 /**
- * The color of a battery: the color of the level its percentage is at, high first, then medium, then low. The level
- * the mouse reports isn't used, since where it puts each one isn't known, and can't be chosen.
+ * The color of a battery: the color of the level its percentage is at. The level the mouse reports isn't used, since
+ * where it puts each one isn't known, and can't be chosen.
  */
-function levelColor({ percentage }: Battery, { high, highFrom, medium, mediumFrom, low }: Levels): string {
-  if (percentage >= highFrom) {
+function levelColor({ percentage }: Battery, { high, medium, mediumFrom, mediumTo, low }: Levels): string {
+  if (percentage >= Math.max(mediumFrom, mediumTo)) {
     return high;
   }
-  return percentage >= mediumFrom ? medium : low;
+  return percentage >= Math.min(mediumFrom, mediumTo) ? medium : low;
 }
