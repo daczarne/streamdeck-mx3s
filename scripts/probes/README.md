@@ -35,7 +35,7 @@ Reads, through every receiver plugged in, everything the plugin needs before swi
 - How many devices it has paired, and in which slot each one is, with its product ID.
 - For each device that answers: its HID++ version, the index of CHANGE_HOST (`0x1814`), which differs from device to device, and its number of hosts and current host.
 
-A device that is paired but connected elsewhere right now, such as the mouse on another channel, doesn't answer.
+A device that is paired but not connected through the receiver right now, such as the mouse on another channel, doesn't answer: the receiver answers for it at once, with error `0x04`, connection request failed.
 
 ### Running it
 
@@ -193,18 +193,20 @@ From the repo root:
 ```shell
 n auto
 node scripts/probes/battery.mjs
-node scripts/probes/battery.mjs --listen 120
+node scripts/probes/battery.mjs --listen 60
 ```
 
 ### Example
 
-With the mouse on its channel 1, through its receiver (the features from 19 on are cut here):
+With the mouse on its channel 1, through its receiver, after about 5 minutes at rest, listening for 60 s, with the mouse's USB-C cable plugged in at about 30 s and unplugged at about 45 s (the features from 19 on are cut here):
 
 ```text
-DevSrvsID:<path1>: opened the receiver's HID++ channel
+DevSrvsID:<path1>: opened the receiver's HID++ channel, in 1 ms
+paired devices: 1, read in 4 ms
+pairing information of every slot, read in 18 ms
 slot 2: product 0xb034 (MX Master 3S)
-  ping: HID++ 4.5, in 982 ms
-  ping again: in 22 ms
+  ping: HID++ 4.5, in 573 ms
+  ping again: in 15 ms
   features, besides IRoot: 36
     1: 0x0001 FEATURE_SET
     2: 0x0003 DEVICE_FW_VERSION
@@ -228,13 +230,19 @@ slot 2: product 0xb034 (MX Master 3S)
     getCapabilities: 0f 03 00 00
       levels: critical, low, good, full
       rechargeable: yes, percentage: yes
-    getStatus, in 22 ms: 5f 08 00 00
+    getStatus, in 23 ms: 5f 08 00 00
       95%, level full, discharging, external power 0x00
   no 0x1000 BATTERY_STATUS feature
   no 0x1001 BATTERY_VOLTAGE feature
+listening for 60 s
+  28.4 s, DevSrvsID:<path1>: 11 02 08 00 5f 08 01 01 00 00 00 00 00 00 00 00 00 00 00 00
+    UNIFIED_BATTERY notification: 95%, level full, charging, external power 0x01
+  44.0 s, DevSrvsID:<path1>: 11 02 08 00 5f 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    UNIFIED_BATTERY notification: 95%, level full, discharging, external power 0x00
+done listening
 ```
 
-The mouse has UNIFIED_BATTERY only. Its capabilities, `0f 03`, are the levels it reports, one bit each, all four here, and its flags: rechargeable, and with a percentage. Its status, `5f 08 00 00`, is the percentage (`0x5f`, 95), the level (`08`, full), the charging state (`00`, discharging) and the external power (`00`, none).
+The receiver answers in a few milliseconds, so the 573 ms of the first ping were spent reaching the mouse, which the ping woke. A mouse kept moving answered it in about 20 ms. The mouse has UNIFIED_BATTERY only. Its capabilities, `0f 03`, are the levels it reports, one bit each, all four here, and its flags: rechargeable, and with a percentage. Its status, `5f 08 00 00`, is the percentage (`0x5f`, 95), the level (`08`, full), the charging state (`00`, discharging) and the external power (`00`, none). Each time the cable was plugged in or out, the mouse sent a notification on its own: function 0, software ID 0, with the same four bytes as `getStatus`. While charging, the charging state is `01` and the external power `01`. These are measurements of one MX Master 3S, through its receiver, on macOS: another mouse may take a different time to wake.
 
 [#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
 [#16]: https://github.com/daczarne/streamdeck-mx3s/issues/16

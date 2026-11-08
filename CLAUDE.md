@@ -91,6 +91,7 @@ Requests are HID++ short reports of 7 bytes: `0x10`, the device index, the featu
 What shapes the design:
 
 - **Input Monitoring.** Over Bluetooth, all of the mouse's HID collections, the pointer and the HID++ channel, share one device path, and opening it needs Input Monitoring, which a plugin would hold as the Stream Deck app's, for every plugin it runs. A Bolt receiver keeps its HID++ channel on a device path of its own, which opens with no permission. So the plugin reaches the mouse only through receivers, and asks for no permission ([#3]).
+- **Reaching the mouse takes time.** The receiver answers in a few milliseconds, but the first request to a mouse at rest takes up to about 1.2 s, measured with `scripts/probes/battery.mjs`, since the request has to wake it: every request after it takes about 20 ms. A mouse that the receiver doesn't reach, such as one on another host, gets the receiver's error `0x04` at once, rather than no reply.
 - **One way from each computer.** Once a computer sends the mouse to another host, it can't call it back. A key sends the mouse to a given host: a toggle can't work. The mouse comes back with its own button, or from the other host.
 
 ## Testing on the hardware
