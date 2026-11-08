@@ -289,3 +289,21 @@ describe("styleOf", () => {
     );
   });
 });
+
+describe("the settings page", () => {
+  const page = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.html", "utf8");
+  const sections = [...page.matchAll(/<section>([\s\S]*?)<\/section>/g)].map(([, body]) => body ?? "");
+
+  it("heads each section, in the order the key's elements go", () => {
+    const headings = sections.map((body) => /<h2 class="section-heading">([^<]+)<\/h2>/.exec(body)?.[1]);
+
+    expect(headings).toEqual(["Background", "Mouse icon", "Battery icon", "Bolt icon"]);
+  });
+
+  it("ends each section with a Reset button, after every setting it resets", () => {
+    for (const body of sections) {
+      expect(body.match(/<sdpi-button class="reset">Reset<\/sdpi-button>/g)).toHaveLength(1);
+      expect(body.lastIndexOf("setting=")).toBeLessThan(body.indexOf('class="reset"'));
+    }
+  });
+});
