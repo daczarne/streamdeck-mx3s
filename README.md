@@ -1,6 +1,6 @@
 # MX Master 3S for Stream Deck
 
-A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Switch hosts, the computers paired to the 1, 2 and 3 on the mouse, without Logitech's software. It's installed from a file attached to each [release][releases], not from Elgato's Marketplace.
+A Stream Deck plugin that switches a Logitech MX Master 3S between its Easy-Switch hosts, the computers paired to the 1, 2 and 3 on the mouse, and shows how much battery it has left, without Logitech's software. It's installed from a file attached to each [release][releases], not from Elgato's Marketplace.
 
 Not an official Logitech or Elgato product.
 
@@ -10,6 +10,7 @@ Not an official Logitech or Elgato product.
 - [Installing](#installing)
 - [Setting up on a new computer](#setting-up-on-a-new-computer)
 - [The Set Host key](#the-set-host-key)
+- [The Battery key](#the-battery-key)
 - [Working on the plugin](#working-on-the-plugin)
 - [Settings pages](#settings-pages)
 - [Packaging](#packaging)
@@ -19,18 +20,18 @@ Not an official Logitech or Elgato product.
 
 ## Status
 
-The plugin has one action, [Set Host](#the-set-host-key): a key that sends the mouse to one of its hosts. It talks to the mouse through a Logi Bolt receiver, with no permission and no Logitech software. It does so in-process, over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights.
+The plugin has two actions: [Set Host](#the-set-host-key), a key that sends the mouse to one of its hosts, and [Battery](#the-battery-key), a key that shows how much battery the mouse has left. It talks to the mouse through a Logi Bolt receiver, with no permission and no Logitech software. It does so in-process, over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights.
 
 Once a computer sends the mouse to another host, it loses the mouse and can't call it back. A key can send the mouse to a host, but a key that toggles between two hosts can't work. The mouse comes back with its own button, or from the other host.
 
 ## Supported hardware
 
-| Mouse        | Connection         | Switching hosts                        |
-|--------------|--------------------|----------------------------------------|
-| MX Master 3S | Logi Bolt receiver | Supported, with the Set Host key       |
-| MX Master 3S | Bluetooth          | Not supported                          |
+| Mouse        | Connection         | Support                                        |
+|--------------|--------------------|------------------------------------------------|
+| MX Master 3S | Logi Bolt receiver | Supported, with the Set Host and Battery keys  |
+| MX Master 3S | Bluetooth          | Not supported                                  |
 
-The plugin reaches the mouse through a Logi Bolt receiver on each computer, paired with the mouse on that computer's Easy-Switch channel. Over Bluetooth, opening the mouse on macOS needs a permission the plugin doesn't ask for (see [Requirements](#requirements)). Other Logitech mice with Easy-Switch and Bolt support the same HID++ feature, but the plugin isn't checked on any of them. If you try one, [an issue][issues] saying how it went helps.
+The plugin reaches the mouse through a Logi Bolt receiver on each computer, paired with the mouse on that computer's Easy-Switch channel. Over Bluetooth, opening the mouse on macOS needs a permission the plugin doesn't ask for (see [Requirements](#requirements)). Other Logitech mice with Easy-Switch and Bolt support the same HID++ features, but the plugin isn't checked on any of them. If you try one, [an issue][issues] saying how it went helps.
 
 ## Requirements
 
@@ -87,6 +88,12 @@ The Set Host key sends the mouse to the host it's set to, chosen on its settings
 On a press, the key shows a check mark once the mouse is on its way, or already on that host, and an alert when no receiver on this computer reaches the mouse, such as when it's on another host already. The plugin's log says why (see [Working on the plugin](#working-on-the-plugin)).
 
 A key on each computer for each of the other hosts lets the mouse be sent from any of them to any other.
+
+## The Battery key
+
+The Battery key shows how full the mouse's battery is, as a percentage, with the mouse and a battery filled as far across the top. Its colors follow the level the mouse reports: green when the battery is full or good, yellow when it's low, and red when it's critical. While the mouse is on its cable, charging or charged, a bolt shows next to the battery.
+
+The key reads the battery when it appears, when it's pressed, and every 10 minutes while it's shown. Every read reaches the mouse through the receiver, as Set Host does, and wakes it if it's at rest. When the mouse doesn't answer, such as when it's on another host, the key shows the last reading in grey. Until the plugin has read the battery once, the key shows an empty battery and dashes, in grey. Every Battery key shows the same reading, and the plugin draws the whole key, so it has no title.
 
 ## Working on the plugin
 
@@ -146,7 +153,7 @@ How a release is made, from the version to publishing it, is in [`docs/releases.
 
 ## Icons
 
-The plugin's images, its category icon in the Stream Deck app's list of actions, its marketplace icon in its list of plugins, and the Set Host action's icon and key image, are drawn by code, from the glyphs of [`streamdeck-icons`][streamdeck-icons], a development dependency pinned to a commit. That repository also holds the palette, and the MX Master 3S icon pack, which adds keys for the mouse's hosts to Stream Deck's Icon Library. `scripts/generate-icons.mjs` decides which glyph goes where, and renders each to the PNG sizes Stream Deck needs. They're the pack's mouse, filled: the category icon at the size of the pack's own icon, the marketplace icon on a dark rounded tile, so it also shows on a light page, and the Set Host key's image smaller, centered, to leave room for its title under it. The action's icon, in the list of actions, is the mouse outlined.
+The plugin's images, its category icon in the Stream Deck app's list of actions, its marketplace icon in its list of plugins, and the actions' icons and key images, are drawn by code, from the glyphs of [`streamdeck-icons`][streamdeck-icons], pinned to a commit. That repository also holds the palette, and the MX Master 3S icon pack, which adds keys for the mouse's hosts to Stream Deck's Icon Library. `scripts/generate-icons.mjs` decides which glyph goes where, and renders each to the PNG sizes Stream Deck needs. They're the pack's mouse, filled: the category icon at the size of the pack's own icon, the marketplace icon on a dark rounded tile, so it also shows on a light page, and the Set Host key's image smaller, centered, to leave room for its title under it. Set Host's icon, in the list of actions, is the mouse outlined. Battery's icon is the pack's battery, empty, and so is its key's image, which the plugin replaces as soon as the key appears: while it runs, the plugin draws the Battery key from each reading, from the same package's glyphs, its palette, and the outlines of its font's figures, which is why the package is bundled into the plugin rather than only used to build it.
 
 To take a change to the glyphs, update the commit the dependency is pinned to, run `npm run icons`, and commit the regenerated images with it. CI regenerates them too, and fails when the committed images aren't what the script draws.
 

@@ -7,7 +7,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
-import { INK, MOUSE, mouseGlyph, svgDoc, WHITE } from "@daczarne/streamdeck-icons";
+import { BATTERY, batteryGlyph, INK, MOUSE, mouseGlyph, svgDoc, WHITE } from "@daczarne/streamdeck-icons";
 import sharp from "sharp";
 
 const root = path.resolve("com.daczarne.mx3s.sdPlugin/imgs");
@@ -23,6 +23,16 @@ const MOUSE_SPAN = MOUSE.bottom - MOUSE.top;
  * the bottom, clears the mouse centered above it.
  */
 const ICON_SPANS = { category: 0.86, action: 0.9, marketplace: 0.7, key: 0.44 };
+
+/** How much of its canvas's width the battery covers as drawn, from its body's left edge to its terminal's right. */
+const BATTERY_SPAN = BATTERY.right + BATTERY.terminal.width - BATTERY.left;
+
+/**
+ * How much of each Battery icon's width the battery covers: in the action's icon, about as much as the mouse covers of
+ * Set Host's height, and on the key, which the plugin draws over as soon as the key appears, less, as the mouse on
+ * Set Host's key.
+ */
+const BATTERY_SPANS = { action: 0.9, key: 0.6 };
 
 /** The corner radius of the marketplace icon's tile, as a share of its side, as the Litra plugin's has. */
 const TILE_RADIUS = 0.18;
@@ -105,6 +115,42 @@ function keyImage(size) {
 }
 
 /**
+ * The battery, empty, white on transparent, scaled about the center to cover `span` of its canvas's width.
+ *
+ * @param {number} size the side of its square canvas
+ * @param {number} span
+ * @returns {string} its SVG markup
+ */
+function placedBattery(size, span) {
+  const c = size / 2;
+  // The battery's body and terminal, together, are centered on the canvas, as the glyph draws them.
+  return `<g transform="translate(${c} ${c}) scale(${span / BATTERY_SPAN}) translate(${-c} ${-c})">
+    ${batteryGlyph(size)}</g>`;
+}
+
+/**
+ * The Battery action's icon, in the Stream Deck app's list of actions: the empty battery, as line art like Set Host's
+ * outlined mouse.
+ *
+ * @param {number} size the side of its square canvas
+ * @returns {string} its SVG markup
+ */
+function batteryActionIcon(size) {
+  return placedBattery(size, BATTERY_SPANS.action);
+}
+
+/**
+ * The Battery key's image until the plugin draws its own, which it does as soon as the key appears: the empty battery,
+ * centered.
+ *
+ * @param {number} size the side of its square canvas
+ * @returns {string} its SVG markup
+ */
+function batteryKeyImage(size) {
+  return placedBattery(size, BATTERY_SPANS.key);
+}
+
+/**
  * The marketplace icon: the filled mouse in the palette's white, on a rounded tile in its ink, so it shows on a light
  * page as well as on the Stream Deck app's dark one.
  *
@@ -133,6 +179,10 @@ async function main() {
 
   // Key (72 / 144): the image of a key the action is placed on
   await writePair(path.join(root, "actions/set-host/key"), keyImage, 72);
+
+  // The Battery action's icon and key, at the same sizes
+  await writePair(path.join(root, "actions/battery/icon"), batteryActionIcon, 20);
+  await writePair(path.join(root, "actions/battery/key"), batteryKeyImage, 72);
 
   console.log("Icons generated.");
 }
