@@ -114,7 +114,7 @@ npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```
 
-The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each press of a key and what came of it. It carries on across restarts, and is rotated once it reaches 1 MB, keeping four older files.
+The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each press of a key, each read of the battery, the ones every 10 minutes included, and what came of them. It carries on across restarts, and is rotated once it reaches 1 MB, keeping four older files.
 
 ## Settings pages
 

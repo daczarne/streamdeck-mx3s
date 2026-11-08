@@ -100,7 +100,7 @@ What shapes the design:
 ## Testing on the hardware
 
 - Build, enable developer mode (`npx streamdeck dev`), `npm run link`, then `npx streamdeck restart com.daczarne.mx3s`. The actions appear under the plugin's category. Developer mode stays on. A change to `manifest.json` takes effect only once Stream Deck itself is quit and reopened, so mention it whenever a branch changes the manifest.
-- Plugin logs are in `com.daczarne.mx3s.sdPlugin/logs/`, newest in `mx3s.log`, which tells each press, the paths of the receivers it opens, and what came of it. The SDK's own `com.daczarne.mx3s.<n>.log` files there hold what the SDK reports itself, such as an uncaught exception. Stream Deck's own log, `~/Library/Logs/ElgatoStreamDeck/StreamDeck.log`, records what it refuses from the plugin.
+- Plugin logs are in `com.daczarne.mx3s.sdPlugin/logs/`, newest in `mx3s.log`, which tells each press, each read of the battery, the paths of the receivers each one opens, and what came of it. The SDK's own `com.daczarne.mx3s.<n>.log` files there hold what the SDK reports itself, such as an uncaught exception. Stream Deck's own log, `~/Library/Logs/ElgatoStreamDeck/StreamDeck.log`, records what it refuses from the plugin.
 - Switching the host moves the mouse away from the computer running the test. Say so before asking for a check that does it, and how to bring the mouse back.
 - The probes in `scripts/probes/` reach the mouse through Bolt receivers, and need no permission. Never ask for Input Monitoring, for a probe or for the Stream Deck app.
 - Claude can't see the Deck. The user checks what the keys show, and can share a photo of them.
