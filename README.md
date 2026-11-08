@@ -95,6 +95,8 @@ The Battery key shows how full the mouse's battery is, as a percentage, with the
 
 The key reads the battery when it appears, when it's pressed, and every 10 minutes while it's shown. Every read reaches the mouse through the receiver, as Set Host does, and wakes it if it's at rest. When the mouse doesn't answer, such as when it's on another host, the key shows the last reading in grey. Until the plugin has read the battery once, the key shows an empty battery and dashes, in grey. Every Battery key shows the same reading, and the plugin draws the whole key, so it has no title.
 
+On its settings page, each key chooses its background: the palette's charcoal tile until another color is picked, or none, which leaves the key black behind the mouse, the battery and the percentage. A background changes on the key as soon as it's chosen, without reading the battery again.
+
 ## Working on the plugin
 
 [The contributing guide][contributing] describes how changes are made, and [the style guide][style-guide] the conventions the linters don't enforce.

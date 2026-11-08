@@ -28,6 +28,7 @@
       "UUID": "com.daczarne.mx3s.battery",
       "Icon": "imgs/actions/battery/icon",
       "Tooltip": "Shows how much battery the mouse has left, and whether it's charging.",
+      "PropertyInspectorPath": "ui/battery.html",
       "Controllers": [
         "Keypad"
       ],

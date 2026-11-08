@@ -4,11 +4,11 @@
 - [Setup](#setup)
 - [Checks](#checks)
 
-The unit tests check against emulated receivers how the plugin reads the battery, through which feature and with which request, and what it makes of each level and charging state. They also check against a fake Stream Deck which image each reading draws on the keys, that a press and the 10-minute timer read the battery again, that the timer stops once no key is shown, and that a mouse that doesn't answer greys the last reading out. The checks below cover what they take for granted: that the mouse answers as the probe measured it, that Stream Deck draws the image the plugin sends, at every key size, and that the key follows the mouse as it charges, leaves and comes back.
+The unit tests check against emulated receivers how the plugin reads the battery, through which feature and with which request, and what it makes of each level and charging state. They also check against a fake Stream Deck which image each reading draws on the keys, on the background each key's settings choose, that a press and the 10-minute timer read the battery again, that the timer stops once no key is shown, and that a mouse that doesn't answer greys the last reading out, and against the settings page's HTML that it shows the plugin's default background. The checks below cover what they take for granted: that the mouse answers as the probe measured it, that Stream Deck draws the image the plugin sends, at every key size, that the key follows the mouse as it charges, leaves and comes back, and that the settings page, which no test loads, saves what it shows.
 
 ## When to run these checks
 
-- After a change to `src/battery.ts`, `src/mouse.ts`, `src/actions/battery.ts` or `src/actions/battery-image.ts`, or to the key's images.
+- After a change to `src/battery.ts`, `src/mouse.ts`, `src/actions/battery.ts` or `src/actions/battery-image.ts`, to the key's images or to its settings page.
 - After an update of `@daczarne/streamdeck-icons`, whose glyphs, palette and figures the key is drawn from.
 - After an upgrade of `node-hid`, `@elgato/streamdeck` or `@elgato/utils`.
 - After a Stream Deck or macOS update.
@@ -38,5 +38,6 @@ tail -n 5 com.daczarne.mx3s.sdPlugin/logs/mx3s.log
 6. **The key shows dashes before the first reading.** Unplug this computer's receiver, and restart the plugin: the key shows the mouse and an empty battery in grey, with three dashes, and the log says `No Logi Bolt receiver found`. Plug the receiver back in, and press the key: it shows the reading.
 7. **The key reads again every 10 minutes.** Leave the key shown, without pressing it, for a little over 10 minutes: the log has a new `Read the MX Master 3S's battery` line about 10 minutes after the one before.
 8. **Every key shows the same reading, and none reads while none is shown.** With two Battery keys shown, press one: both show the new reading, and the log has one `Read` line. Switch to a profile or page with no Battery key for a little over 10 minutes: the log has no `Read` line in that time.
+9. **Each key keeps the background it chooses.** On a key's settings page, the background shows the charcoal of the key as placed, with **None** beside it on the same row. Pick another color: the key takes it once the picker closes, and the log has no new `Read` line. Check **None**: the key turns black behind the mouse, the battery and the percentage, whatever the color picked, and back to that color once unchecked. Another Battery key keeps its own background throughout, and both keep theirs through the next press and across a restart of the plugin.
 
 [probes]: ../../scripts/probes/README.md

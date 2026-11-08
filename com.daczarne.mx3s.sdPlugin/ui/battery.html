@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+  <head lang="en">
+    <title>MX Master 3S Battery</title>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'none';
+        script-src 'self';
+        style-src 'unsafe-inline';
+        img-src data:;
+        connect-src ws://localhost:*;
+        base-uri 'none';
+        form-action 'none'
+      "
+    />
+    <script src="vendor/sdpi-components.js"></script>
+    <style>
+      /* The color picker, narrow, with None beside it on the same row. */
+      .background {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .background sdpi-color {
+        flex: 0 0 72px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- The key's background, the palette's charcoal tile until another color is picked, or none at all, which leaves
+         the key black behind the image. A checkbox that starts unchecked has no default, since `default="false"`
+         would check it. -->
+    <sdpi-item label="Background">
+      <div class="background">
+        <sdpi-color setting="background" default="#2B2E33"></sdpi-color>
+        <sdpi-checkbox setting="noBackground" label="None"></sdpi-checkbox>
+      </div>
+    </sdpi-item>
+  </body>
+
+</html>

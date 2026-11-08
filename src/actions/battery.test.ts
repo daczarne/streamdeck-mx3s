@@ -1,10 +1,12 @@
+import { readFileSync } from "node:fs";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type Battery, type BatteryResult, readBattery } from "../battery";
 import { logger } from "../logging";
 import { FakeDeck } from "../test-support/fake-deck";
-import { BatteryAction, REFRESH_MS } from "./battery";
-import { batteryImage } from "./battery-image";
+import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
+import { batteryImage, DEFAULT_BACKGROUND } from "./battery-image";
 
 //* Fakes
 
@@ -21,6 +23,9 @@ const BATTERY = "com.daczarne.mx3s.battery";
 
 const FULL: Battery = { percentage: 95, level: "full", charging: false };
 const LOW: Battery = { percentage: 20, level: "low", charging: true };
+
+// The style of a key that hasn't chosen one: the charcoal tile.
+const TILE = { background: DEFAULT_BACKGROUND };
 
 let deck: FakeDeck;
 
@@ -46,7 +51,7 @@ describe("BatteryAction", () => {
     const key = await deck.key(BATTERY);
 
     expect(readBattery).toHaveBeenCalledOnce();
-    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: FULL, found: true }));
+    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: FULL, found: true }, TILE));
   });
 
   it("shows a key that appears before the first reading as never found, until it comes", async () => {
@@ -63,8 +68,8 @@ describe("BatteryAction", () => {
     const key = await appearing;
 
     expect(key.setImage.mock.calls.map(([image]) => image)).toEqual([
-      batteryImage({ battery: undefined, found: false }),
-      batteryImage({ battery: FULL, found: true }),
+      batteryImage({ battery: undefined, found: false }, TILE),
+      batteryImage({ battery: FULL, found: true }, TILE),
     ]);
   });
 
@@ -75,7 +80,7 @@ describe("BatteryAction", () => {
     await deck.press(key);
 
     expect(readBattery).toHaveBeenCalledTimes(2);
-    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }));
+    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }, TILE));
     expect(logger.info).toHaveBeenCalledWith("Key pressed");
   });
 
@@ -85,7 +90,7 @@ describe("BatteryAction", () => {
 
     await deck.press(key);
 
-    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: FULL, found: false }));
+    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: FULL, found: false }, TILE));
   });
 
   it("shows the mouse never found when it hasn't answered yet", async () => {
@@ -93,7 +98,7 @@ describe("BatteryAction", () => {
 
     const key = await deck.key(BATTERY);
 
-    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: undefined, found: false }));
+    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: undefined, found: false }, TILE));
   });
 
   it("shows one reading on every key, and redraws them all", async () => {
@@ -103,8 +108,8 @@ describe("BatteryAction", () => {
 
     await deck.press(second);
 
-    expect(first.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }));
-    expect(second.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }));
+    expect(first.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }, TILE));
+    expect(second.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }, TILE));
   });
 
   it("reads once for presses that come while a read is under way", async () => {
@@ -125,7 +130,7 @@ describe("BatteryAction", () => {
     await vi.advanceTimersByTimeAsync(1);
 
     expect(readBattery).toHaveBeenCalledTimes(2);
-    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }));
+    expect(key.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }, TILE));
   });
 
   it("keeps one timer for every key, and stops it once none is shown", async () => {
@@ -150,7 +155,73 @@ describe("BatteryAction", () => {
 
     await deck.press(working);
 
-    expect(working.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }));
+    expect(working.setImage).toHaveBeenLastCalledWith(batteryImage({ battery: LOW, found: true }, TILE));
     expect(logger.warn).toHaveBeenCalledWith("Can't draw a Battery key", expect.any(Error));
+  });
+
+  describe("its background", () => {
+    it("draws a key on the background its settings choose, or none", async () => {
+      const colored = await deck.key(BATTERY, { background: "#123456" });
+      const bare = await deck.key(BATTERY, { background: "#123456", noBackground: true });
+
+      expect(colored.setImage).toHaveBeenLastCalledWith(
+        batteryImage({ battery: FULL, found: true }, { background: "#123456" }),
+      );
+      expect(bare.setImage).toHaveBeenLastCalledWith(
+        batteryImage({ battery: FULL, found: true }, { background: undefined }),
+      );
+    });
+
+    it("redraws only the key whose settings change, without reading the battery again", async () => {
+      const changed = await deck.key(BATTERY);
+      const other = await deck.key(BATTERY);
+      vi.mocked(readBattery).mockClear();
+      other.setImage.mockClear();
+
+      await deck.changeSettings(changed, { noBackground: true });
+
+      expect(changed.setImage).toHaveBeenLastCalledWith(
+        batteryImage({ battery: FULL, found: true }, { background: undefined }),
+      );
+      expect(other.setImage).not.toHaveBeenCalled();
+      expect(readBattery).not.toHaveBeenCalled();
+    });
+
+    it("keeps each key's background through the readings that follow", async () => {
+      const key = await deck.key(BATTERY, { background: "#123456" });
+      readsGive({ ok: true, battery: LOW });
+
+      await deck.press(key);
+
+      expect(key.setImage).toHaveBeenLastCalledWith(
+        batteryImage({ battery: LOW, found: true }, { background: "#123456" }),
+      );
+    });
+  });
+});
+
+describe("styleOf", () => {
+  it.each([
+    ["nothing chosen yet", {}, DEFAULT_BACKGROUND],
+    ["a color", { background: "#a1B2c3" }, "#a1B2c3"],
+    ["no background", { background: "#a1b2c3", noBackground: true }, undefined],
+    ["no background unchecked", { background: "#a1b2c3", noBackground: false }, "#a1b2c3"],
+  ])("takes %s", (_case, settings, background) => {
+    expect(styleOf(settings)).toEqual({ background });
+  });
+
+  it("takes the default the settings page shows for a key that hasn't chosen yet", () => {
+    const page = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.html", "utf8");
+
+    const shown = /<sdpi-color setting="background" default="(#[0-9A-Fa-f]{6})">/.exec(page)?.[1];
+
+    expect(shown?.toUpperCase()).toBe(DEFAULT_BACKGROUND.toUpperCase());
+  });
+
+  it.each([["red"], ["#12345"], ["#1234567"], [42]])("takes the default, with a warning, for %s", (value) => {
+    expect(styleOf({ background: value })).toEqual({ background: DEFAULT_BACKGROUND });
+    expect(logger.warn).toHaveBeenCalledWith(
+      `Setting background is ${JSON.stringify(value)}, not a color: using ${DEFAULT_BACKGROUND}`,
+    );
   });
 });

@@ -1,7 +1,8 @@
 /**
  * The Battery key's image, drawn afresh from each reading: the mouse, the battery and, while it charges, a bolt in a
- * row across the top, and the percentage below them, on the palette's charcoal tile. Its colors follow the level the
- * mouse puts its charge at, and turn grey once the mouse isn't found, keeping the last reading.
+ * row across the top, and the percentage below them, on a background each key chooses, the palette's charcoal tile
+ * unless it chooses another, or none. Its colors follow the level the mouse puts its charge at, and turn grey once the
+ * mouse isn't found, keeping the last reading.
  */
 import {
   ACCENTS,
@@ -40,22 +41,31 @@ const NOT_FOUND = TILES.grey;
 const LOW_BELOW = 60;
 const CRITICAL_BELOW = 30;
 
+/** The background a key takes unless it chooses another. */
+export const DEFAULT_BACKGROUND = TILES.charcoal;
+
 /** What the key shows: the last reading, if there was one, and whether the mouse answered the last read. */
 export type Shown = { battery: Battery | undefined; found: boolean };
 
+/**
+ * How a key draws what it shows: its background, a color such as `#2B2E33`, or none, which leaves the image
+ * transparent, so the key shows Stream Deck's own black behind it.
+ */
+export type Style = { background: string | undefined };
+
 /** The key's image, as a data URL Stream Deck takes for `setImage`. */
-export function batteryImage(shown: Shown): string {
-  return `data:image/svg+xml;base64,${Buffer.from(batterySvg(shown)).toString("base64")}`;
+export function batteryImage(shown: Shown, style: Style): string {
+  return `data:image/svg+xml;base64,${Buffer.from(batterySvg(shown, style)).toString("base64")}`;
 }
 
 /** The key's image, as an SVG document. */
-export function batterySvg({ battery, found }: Shown): string {
+export function batterySvg({ battery, found }: Shown, { background }: Style): string {
   const color = found && battery !== undefined ? levelColor(battery) : NOT_FOUND;
   const cell = SIZE * CELL;
   const place = (center: number, glyph: string) =>
     `<g transform="translate(${SIZE * center - cell / 2} ${SIZE * TOP})">${glyph}</g>`;
   const parts = [
-    `<rect width="${SIZE}" height="${SIZE}" fill="${TILES.charcoal}"/>`,
+    background === undefined ? "" : `<rect width="${SIZE}" height="${SIZE}" fill="${background}"/>`,
     place(CENTERS[0], mouseGlyph(cell, { color: found ? WHITE : NOT_FOUND, filled: true })),
     place(
       CENTERS[1],
