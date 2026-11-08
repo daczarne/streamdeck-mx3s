@@ -8,7 +8,7 @@ The unit tests check against emulated receivers, listed as macOS and as Windows 
 
 ## When to run these checks
 
-- After a change to `src/mouse.ts` or `src/actions/set-host.ts`, to the key's images or its settings page.
+- After a change to `src/mouse.ts`, `src/host.ts` or `src/actions/set-host.ts`, to the key's images or its settings page.
 - After an upgrade of `node-hid`, `@elgato/streamdeck` or `@elgato/utils`.
 - After a Stream Deck or macOS update.
 
@@ -35,7 +35,7 @@ tail -n 5 com.daczarne.mx3s.sdPlugin/logs/mx3s.log
 2. **The key of this computer's host leaves the mouse here.** Press the key of the host the mouse is on: it shows a check mark, and the pointer goes on moving. The log ends with `The MX Master 3S is already on host` and its number.
 3. **The key of another host sends the mouse there.** Press another host's key: it shows a check mark, and the pointer stops moving here. On that host, the mouse moves the pointer. The log ends with `Sent the MX Master 3S from host`, the host it left and the one it went to. Bring the mouse back.
 4. **No permission is asked for.** Through the checks above, macOS asks for none, and Stream Deck isn't listed in **System Settings › Privacy & Security › Input Monitoring**.
-5. **A key alerts when the mouse is elsewhere.** Send the mouse to another host with its own button, then press any key: after a moment, it shows an alert, and the mouse stays where it is. The log ends with `No receiver reaches the MX Master 3S`. Bring the mouse back.
+5. **A key alerts when the mouse is elsewhere.** Send the mouse to another host with its own button, then press any key: it shows an alert at once, and the mouse stays where it is. The log ends with `No receiver reaches the MX Master 3S`. Bring the mouse back.
 6. **A key alerts with no receiver.** Unplug this computer's receiver, and press any key: it shows an alert, and the log ends with `No Logi Bolt receiver found`. Plug the receiver back in, and press the key of the host the mouse is on: it shows a check mark again.
 7. **The log carries on across restarts.** Restart the plugin and press a key: `mx3s.log` holds the earlier lines, then `Plugin started` and the new ones.
 

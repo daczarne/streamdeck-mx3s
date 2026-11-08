@@ -8,8 +8,8 @@ import {
 } from "@elgato/streamdeck";
 import type { JsonObject, JsonValue } from "@elgato/utils";
 
+import { switchHost } from "../host";
 import { logger as pluginLogger } from "../logging";
-import { switchHost } from "../mouse";
 
 const logger = pluginLogger.createScope("Set Host");
 

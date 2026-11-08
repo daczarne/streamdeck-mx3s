@@ -1,8 +1,11 @@
 /**
- * Talks to the MX Master 3S through the Logi Bolt receivers plugged in, over HID++: the only module that uses
+ * Reaches the MX Master 3S through the Logi Bolt receivers plugged in, over HID++: the only module that uses
  * `node-hid`. HID++ 1.0 reads the receiver's own registers, to find the mouse's slot on it, and HID++ 2.0 reaches the
- * mouse, by that slot, through its CHANGE_HOST feature. `scripts/probes/hidpp.mjs` sends the same requests, by hand.
- * Every request waits for its own reply, and skips the notifications that arrive in between.
+ * mouse, by that slot, through its features. `scripts/probes/hidpp.mjs` sends the same requests, by hand. Every
+ * request waits for its own reply, and skips the notifications that arrive in between.
+ *
+ * What the plugin does with the mouse, such as sending it to a host (`host.ts`), is an operation on one of its
+ * features, run through {@link reachMouse}: one at a time, on a channel opened for it and closed once it's done.
  *
  * On macOS, a receiver's HID++ channel is one device path, which carries both short and long reports. On Windows, it's
  * two, one per report length, each a HID collection of its own: requests, which are short, go through the short one, and
@@ -36,11 +39,11 @@ const ERROR_2_0 = 0xff;
 const RECEIVER_INFO = 0xb5;
 const PAIRING_INFO = 0x50;
 
-// IRoot, the feature every HID++ 2.0 device has at index 0, and CHANGE_HOST, which switches the Easy-Switch host.
+// IRoot, the feature every HID++ 2.0 device has at index 0.
 const ROOT = 0x00;
-const CHANGE_HOST = 0x1814;
 
-// How long a request waits for its reply. A paired device that is on another channel may not answer at all.
+// How long a request waits for its reply. The receiver answers at once, with an error, for a mouse it doesn't reach,
+// such as one on another host, but the first request to a mouse at rest takes up to about 1.2 s, since it wakes it.
 const TIMEOUT_MS = 1500;
 
 // How long a read waits on one handle before trying the other, on a channel that has two.
@@ -52,34 +55,42 @@ type ChannelPaths = string[];
 /** A receiver's HID++ channel, open: the handle requests are written to, and every handle replies are read from. */
 type Channel = { short: HIDAsync; handles: HIDAsync[] };
 
-/** The mouse, as reached through a receiver: its slot, and the index of CHANGE_HOST on it. */
-type Reached = { channel: Channel; slot: number; changeHost: number };
+/** The mouse, as reached through a receiver for one operation: its slot, and the index of the feature it uses. */
+export type Mouse = { channel: Channel; slot: number; index: number };
+
+/** Why an operation couldn't reach the mouse. */
+export type Unreached = { ok: false; outcome: "no-receiver" | "unreachable" | "failed" };
 
 /** An error reply from the receiver or a device, as opposed to a request that failed or got no reply. */
 class HidppError extends Error {}
 
-/** What sending the mouse to a host came to. Only `ok` says the mouse is now on that host, or on its way. */
-export type SwitchResult =
-  | { ok: true; outcome: "switched"; from: number }
-  | { ok: true; outcome: "already-there" }
-  | { ok: false; outcome: "no-receiver" | "unreachable" | "failed" }
-  | { ok: false; outcome: "no-such-host"; hosts: number };
-
-// One switch at a time, as presses come, so the requests and replies of two never mix on a receiver's channel.
+// One operation at a time, as they come, so the requests and replies of two never mix on a receiver's channel.
 let queue: Promise<unknown> = Promise.resolve();
 
 /**
- * Sends the mouse to `host`, counted from 1 as on the mouse, through the receiver it answers through. The mouse leaves
- * at once, so no reply comes. A mouse already on `host` is left alone. It logs what happened, and never throws.
+ * Runs `use` on the mouse, through the first receiver it answers through with the index of `feature`, once the
+ * operation before it has finished. A mouse without the feature isn't reached. It logs why the mouse couldn't be
+ * reached, or a request that failed, and returns that instead of throwing. The receivers it opens are closed before it
+ * returns.
  */
-export function switchHost(host: number): Promise<SwitchResult> {
-  const result = queue.then(() => switchNow(host));
+export function reachMouse<T>(feature: number, use: (mouse: Mouse) => Promise<T>): Promise<T | Unreached> {
+  const result = queue.then(() => reachNow(feature, use));
   queue = result.catch(() => undefined);
   return result;
 }
 
-/** {@link switchHost}, once the switch before it has finished. */
-async function switchNow(host: number): Promise<SwitchResult> {
+/** Calls function `fn` of the feature the mouse was reached by, with `params`, and returns its reply. */
+export function callFeature(mouse: Mouse, fn: number, params: number[] = []): Promise<number[]> {
+  return callAt(mouse.channel, mouse.slot, mouse.index, fn, params);
+}
+
+/** Sends function `fn` of the feature the mouse was reached by, with `params`, for a request that gets no reply. */
+export async function sendFeature(mouse: Mouse, fn: number, params: number[]): Promise<void> {
+  await mouse.channel.short.write(featureReport(mouse.slot, mouse.index, fn, params));
+}
+
+/** {@link reachMouse}, once the operation before it has finished. */
+async function reachNow<T>(feature: number, use: (mouse: Mouse) => Promise<T>): Promise<T | Unreached> {
   let receivers: ChannelPaths[];
   try {
     receivers = await receiverChannels();
@@ -98,9 +109,9 @@ async function switchNow(host: number): Promise<SwitchResult> {
       continue;
     }
     try {
-      const mouse = await findMouse(channel);
+      const mouse = await findMouse(channel, feature);
       if (mouse !== undefined) {
-        return await switchTo(mouse, host);
+        return await use(mouse);
       }
     } catch (error) {
       logger.error("A request to the receiver failed", error);
@@ -129,7 +140,7 @@ async function open(paths: ChannelPaths): Promise<Channel | undefined> {
   return short === undefined ? undefined : { short, handles };
 }
 
-/** Closes a receiver's handles. A failure is only logged: the switch is done by then. */
+/** Closes a receiver's handles. A failure is only logged: the operation is done by then. */
 async function closeAll(handles: HIDAsync[]): Promise<void> {
   for (const handle of handles) {
     try {
@@ -138,23 +149,6 @@ async function closeAll(handles: HIDAsync[]): Promise<void> {
       logger.warn("Can't close a receiver's HID++ channel", error);
     }
   }
-}
-
-/** Sends the mouse reached to `host`, after checking it against the mouse's hosts. */
-async function switchTo(mouse: Reached, host: number): Promise<SwitchResult> {
-  const { count, current } = await hostInfo(mouse);
-  if (host < 1 || host > count) {
-    logger.warn(`The MX Master 3S has ${count} hosts, so it can't go to host ${host}`);
-    return { ok: false, outcome: "no-such-host", hosts: count };
-  }
-  if (host === current) {
-    logger.info(`The MX Master 3S is already on host ${host}`);
-    return { ok: true, outcome: "already-there" };
-  }
-  // setCurrentHost, function 1, takes the host counted from 0.
-  await mouse.channel.short.write(featureReport(mouse.slot, mouse.changeHost, 1, [host - 1]));
-  logger.info(`Sent the MX Master 3S from host ${current} to host ${host}`);
-  return { ok: true, outcome: "switched", from: current };
 }
 
 /**
@@ -181,18 +175,18 @@ async function receiverChannels(): Promise<ChannelPaths[]> {
 }
 
 /**
- * The MX Master 3S on this receiver, if it answers: the first slot paired with one that tells the index of
- * CHANGE_HOST. A mouse paired with the receiver but on another channel doesn't answer, or answers with an error.
+ * The MX Master 3S on this receiver, if it answers: the first slot paired with one that tells the index of `feature`.
+ * A mouse paired with the receiver but on another channel doesn't answer, or answers with an error.
  */
-async function findMouse(channel: Channel): Promise<Reached | undefined> {
+async function findMouse(channel: Channel, feature: number): Promise<Mouse | undefined> {
   for (let slot = 1; slot <= SLOTS; slot++) {
     if ((await productId(channel, slot)) !== MX_MASTER_3S) {
       continue;
     }
     try {
-      const changeHost = await featureIndex(channel, slot, CHANGE_HOST);
-      if (changeHost !== 0) {
-        return { channel, slot, changeHost };
+      const index = await featureIndex(channel, slot, feature);
+      if (index !== 0) {
+        return { channel, slot, index };
       }
     } catch {
       // On another channel, or off.
@@ -228,18 +222,12 @@ async function productId(channel: Channel, slot: number): Promise<number | undef
 
 /** The index of feature `id` on the device in `slot`, from IRoot, or 0 when the device doesn't have it. */
 async function featureIndex(channel: Channel, slot: number, id: number): Promise<number> {
-  const reply = await callFeature(channel, slot, ROOT, 0, [id >> 8, id & 0xff]);
+  const reply = await callAt(channel, slot, ROOT, 0, [id >> 8, id & 0xff]);
   return reply[4] ?? 0;
 }
 
-/** How many Easy-Switch hosts the mouse has, and which one it's on, counted from 1 as on the mouse. */
-async function hostInfo({ channel, slot, changeHost }: Reached): Promise<{ count: number; current: number }> {
-  const reply = await callFeature(channel, slot, changeHost, 0);
-  return { count: reply[4] ?? 0, current: (reply[5] ?? 0) + 1 };
-}
-
 /** Calls function `fn` of the feature at `index` on the device in `slot`, with `params`, and returns its reply. */
-function callFeature(channel: Channel, slot: number, index: number, fn: number, params: number[] = []) {
+function callAt(channel: Channel, slot: number, index: number, fn: number, params: number[] = []) {
   const report = featureReport(slot, index, fn, params);
   const fnId = report[3];
   return request(

@@ -23,9 +23,11 @@ const ERROR_2_0 = 0xff;
 const RECEIVER_INFO = 0xb5;
 const PAIRING_INFO = 0x50;
 
-// HID++ 1.0 error codes: an invalid value, such as an empty slot's sub-register, and a device that isn't connected.
+// HID++ 1.0 error codes: an invalid value, such as an empty slot's sub-register, a slot with no device, and a device
+// that isn't connected, as the probes measured it for a mouse on another host.
 const INVALID_VALUE = 0x02;
 const UNKNOWN_DEVICE = 0x08;
+const CONNECTION_FAILED = 0x04;
 // HID++ 2.0 error code for a function the feature doesn't have.
 const INVALID_FUNCTION = 0x07;
 
@@ -185,7 +187,7 @@ export class EmulatedReceiver {
       return short(index, ERROR_1_0, first, second, UNKNOWN_DEVICE);
     }
     if (!device.connected) {
-      return device.away === "error" ? short(index, ERROR_1_0, first, second, UNKNOWN_DEVICE) : undefined;
+      return device.away === "error" ? short(index, ERROR_1_0, first, second, CONNECTION_FAILED) : undefined;
     }
     return featureReply(device, index, first, second, params);
   }
