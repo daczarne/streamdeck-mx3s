@@ -10,15 +10,29 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { Battery } from "../battery";
-import { batteryImage, batterySvg, DEFAULT_BACKGROUND, DEFAULT_BOLT, DEFAULT_MOUSE } from "./battery-image";
+import {
+  batteryImage,
+  batterySvg,
+  DEFAULT_BACKGROUND,
+  DEFAULT_BOLT,
+  DEFAULT_LEVELS,
+  DEFAULT_MOUSE,
+} from "./battery-image";
 
 /** A reading of the battery, 95%, full and not charging unless given otherwise, as the mouse was measured. */
 function reading(battery: Partial<Battery> = {}): Battery {
   return { percentage: 95, level: "full", charging: false, ...battery };
 }
 
-// The default style: the charcoal tile, the filled white mouse, the battery, and the green bolt while charging.
-const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true, bolt: DEFAULT_BOLT };
+// The default style: the charcoal tile, the filled white mouse, the battery, the green bolt while charging, and the
+// default levels.
+const TILE = {
+  background: DEFAULT_BACKGROUND,
+  mouse: DEFAULT_MOUSE,
+  showBattery: true,
+  bolt: DEFAULT_BOLT,
+  levels: DEFAULT_LEVELS,
+};
 
 /** The colors an SVG uses, for its fills and strokes. */
 function colors(svg: string): Set<string> {
@@ -29,33 +43,71 @@ function colors(svg: string): Set<string> {
 
 describe("batterySvg", () => {
   it.each([
-    ["full", ACCENTS.leaf],
-    ["good", ACCENTS.leaf],
-    ["low", ACCENTS.gold],
-    ["critical", ACCENTS.scarlet],
-  ] as const)("colors a %s battery, and its percentage, by its level", (level, color) => {
-    const svg = batterySvg({ battery: reading({ level, percentage: 50 }), found: true }, TILE);
+    [100, ACCENTS.leaf],
+    [40, ACCENTS.leaf],
+    [39, ACCENTS.gold],
+    [15, ACCENTS.gold],
+    [14, ACCENTS.scarlet],
+    [0, ACCENTS.scarlet],
+  ])("colors a battery at %s%%, and its percentage, by the default levels", (percentage, color) => {
+    const svg = batterySvg({ battery: reading({ percentage }), found: true }, TILE);
 
     expect(colors(svg)).toEqual(new Set([TILES.charcoal, WHITE, color]));
   });
 
   it.each([
-    [61, ACCENTS.leaf],
-    [60, ACCENTS.leaf],
-    [59, ACCENTS.gold],
-    [30, ACCENTS.gold],
-    [29, ACCENTS.scarlet],
-  ])("colors a battery at %s%% with a level it doesn't know by its percentage", (percentage, color) => {
-    const svg = batterySvg({ battery: reading({ level: undefined, percentage }), found: true }, TILE);
+    ["full", 10, ACCENTS.scarlet],
+    ["critical", 95, ACCENTS.leaf],
+    [undefined, 35, ACCENTS.gold],
+  ] as const)("colors a battery the mouse puts at %s by its percentage, %s%%", (level, percentage, color) => {
+    const svg = batterySvg({ battery: reading({ level, percentage }), found: true }, TILE);
 
     expect(colors(svg)).toContain(color);
   });
 
-  it("draws the percentage, and the battery filled as far", () => {
-    const svg = batterySvg({ battery: reading({ percentage: 42, level: "low" }), found: true }, TILE);
+  it.each([
+    [80, "#111111"],
+    [79, "#222222"],
+    [10, "#222222"],
+    [9, "#333333"],
+  ])("colors a battery at %s%% by the levels the key chooses", (percentage, color) => {
+    const levels = { high: "#111111", medium: "#222222", mediumFrom: 10, mediumTo: 80, low: "#333333" };
 
-    expect(svg).toContain(percentageGlyph(144, { percentage: 42, color: ACCENTS.gold }));
-    expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.42, color: ACCENTS.gold }));
+    const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
+
+    expect(svg).toContain(percentageGlyph(144, { percentage, color }));
+    expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: percentage / 100, color }));
+  });
+
+  it.each([
+    [80, "#111111"],
+    [50, "#222222"],
+    [9, "#333333"],
+  ])("takes the medium level's percentages in either order, at %s%%", (percentage, color) => {
+    const levels = { high: "#111111", medium: "#222222", mediumFrom: 80, mediumTo: 10, low: "#333333" };
+
+    const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
+
+    expect(colors(svg)).toContain(color);
+  });
+
+  it.each([
+    [50, "#111111"],
+    [49, "#333333"],
+  ])("shows no medium level when its percentages are the same, at %s%%", (percentage, color) => {
+    const levels = { high: "#111111", medium: "#222222", mediumFrom: 50, mediumTo: 50, low: "#333333" };
+
+    const svg = batterySvg({ battery: reading({ percentage }), found: true }, { ...TILE, levels });
+
+    expect(colors(svg)).toContain(color);
+    expect(colors(svg)).not.toContain("#222222");
+  });
+
+  it("draws the percentage, and the battery filled as far", () => {
+    const svg = batterySvg({ battery: reading({ percentage: 35 }), found: true }, TILE);
+
+    expect(svg).toContain(percentageGlyph(144, { percentage: 35, color: ACCENTS.gold }));
+    expect(svg).toContain(batteryGlyph(144 * 0.34, { charge: 0.35, color: ACCENTS.gold }));
   });
 
   it("draws a green bolt only while the mouse is charging, whatever its level", () => {

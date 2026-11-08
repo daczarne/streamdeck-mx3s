@@ -7,7 +7,7 @@ import { type Battery, type BatteryResult, readBattery } from "../battery";
 import { logger } from "../logging";
 import { FakeDeck } from "../test-support/fake-deck";
 import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
-import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_BOLT, DEFAULT_MOUSE } from "./battery-image";
+import { batteryImage, DEFAULT_BACKGROUND, DEFAULT_BOLT, DEFAULT_LEVELS, DEFAULT_MOUSE } from "./battery-image";
 
 //* Fakes
 
@@ -25,9 +25,15 @@ const BATTERY = "com.daczarne.mx3s.battery";
 const FULL: Battery = { percentage: 95, level: "full", charging: false };
 const LOW: Battery = { percentage: 20, level: "low", charging: true };
 
-// The style of a key that hasn't chosen one: the charcoal tile, the filled white mouse, the battery, and the green
-// bolt while charging.
-const TILE = { background: DEFAULT_BACKGROUND, mouse: DEFAULT_MOUSE, showBattery: true, bolt: DEFAULT_BOLT };
+// The style of a key that hasn't chosen one: the charcoal tile, the filled white mouse, the battery, the green bolt
+// while charging, and the default levels.
+const TILE = {
+  background: DEFAULT_BACKGROUND,
+  mouse: DEFAULT_MOUSE,
+  showBattery: true,
+  bolt: DEFAULT_BOLT,
+  levels: DEFAULT_LEVELS,
+};
 
 let deck: FakeDeck;
 
@@ -243,6 +249,34 @@ describe("styleOf", () => {
     expect(styleOf(settings)).toEqual({ ...TILE, bolt });
   });
 
+  it("takes the levels' colors and percentages", () => {
+    const settings = {
+      highColor: "#111111",
+      mediumColor: "#222222",
+      mediumFrom: 15,
+      mediumTo: 80,
+      lowColor: "#333333",
+    };
+
+    expect(styleOf(settings)).toEqual({
+      ...TILE,
+      levels: { high: "#111111", medium: "#222222", mediumFrom: 15, mediumTo: 80, low: "#333333" },
+    });
+  });
+
+  it.each([["60"], [-5], [101], [null]])(
+    "takes the default levels, with a warning, for a percentage of %s",
+    (value) => {
+      expect(styleOf({ mediumFrom: value, mediumTo: value })).toEqual(TILE);
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Setting mediumTo is ${JSON.stringify(value)}, not a percentage: using ${DEFAULT_LEVELS.mediumTo}`,
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Setting mediumFrom is ${JSON.stringify(value)}, not a percentage: using ${DEFAULT_LEVELS.mediumFrom}`,
+      );
+    },
+  );
+
   it("takes the default bolt, with a warning, for settings that aren't one", () => {
     expect(styleOf({ showBolt: "sometimes", boltColor: 3, boltIdleColor: "grey" })).toEqual(TILE);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -278,8 +312,17 @@ describe("styleOf", () => {
     expect(/<sdpi-radio setting="showBolt" default="([a-z]+)"/.exec(page)?.[1]).toBe(DEFAULT_BOLT.show);
     expect(color("boltColor")).toBe(DEFAULT_BOLT.charging.toUpperCase());
     expect(color("boltIdleColor")).toBe(DEFAULT_BOLT.idle.toUpperCase());
-    // The battery takes its level's color, which the disabled picker shows for a full one.
+    // The battery takes its level's color, which the disabled picker shows for a high one.
     expect(page).toContain(`<sdpi-color default="${ACCENTS.leaf}" disabled>`);
+    expect(color("highColor")).toBe(DEFAULT_LEVELS.high.toUpperCase());
+    expect(color("mediumColor")).toBe(DEFAULT_LEVELS.medium.toUpperCase());
+    expect(color("lowColor")).toBe(DEFAULT_LEVELS.low.toUpperCase());
+    const from = (setting: string) =>
+      Number(new RegExp(`<sdpi-select setting="${setting}" default="(\\d+)" value-type="number">`).exec(page)?.[1]);
+    expect(from("mediumFrom")).toBe(DEFAULT_LEVELS.mediumFrom);
+    expect(from("mediumTo")).toBe(DEFAULT_LEVELS.mediumTo);
+    expect(page).toContain(`<span class="note" id="high-from">from ${DEFAULT_LEVELS.mediumTo}%</span>`);
+    expect(page).toContain(`<span class="note" id="low-below">below ${DEFAULT_LEVELS.mediumFrom}%</span>`);
   });
 
   it.each([["red"], ["#12345"], ["#1234567"], [42]])("takes the default, with a warning, for %s", (value) => {
@@ -294,10 +337,10 @@ describe("the settings page", () => {
   const page = readFileSync("com.daczarne.mx3s.sdPlugin/ui/battery.html", "utf8");
   const sections = [...page.matchAll(/<section>([\s\S]*?)<\/section>/g)].map(([, body]) => body ?? "");
 
-  it("heads each section, in the order the key's elements go", () => {
+  it("heads each section, the key's elements in the order they go, then the levels", () => {
     const headings = sections.map((body) => /<h2 class="section-heading">([^<]+)<\/h2>/.exec(body)?.[1]);
 
-    expect(headings).toEqual(["Background", "Mouse icon", "Battery icon", "Bolt icon"]);
+    expect(headings).toEqual(["Background", "Mouse icon", "Battery icon", "Bolt icon", "Battery level"]);
   });
 
   it("greys out only controls the page has, following switches it has", () => {
@@ -312,6 +355,19 @@ describe("the settings page", () => {
     expect(switches).toEqual(["noBackground", "showMouse", "showBolt"]);
     for (const setting of switches) {
       expect(page).toContain(`setting="${setting}"`);
+    }
+  });
+
+  it("offers the medium level's percentages from 100% down to 0%, in steps of 5%", () => {
+    const steps = Array.from({ length: 21 }, (_, step) => 100 - step * 5);
+
+    for (const setting of ["mediumFrom", "mediumTo"]) {
+      const select =
+        new RegExp(`<sdpi-select setting="${setting}"[^>]*>([\\s\\S]*?)</sdpi-select>`).exec(page)?.[1] ?? "";
+      const options = [...select.matchAll(/<option value="(\d+)">(\d+)%<\/option>/g)];
+
+      expect(options.map(([, value]) => Number(value))).toEqual(steps);
+      expect(options.every(([, value, shown]) => value === shown)).toBe(true);
     }
   });
 

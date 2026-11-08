@@ -17,7 +17,9 @@ import {
   batteryImage,
   DEFAULT_BACKGROUND,
   DEFAULT_BOLT,
+  DEFAULT_LEVELS,
   DEFAULT_MOUSE,
+  type Levels,
   type MouseStyle,
   type Style,
 } from "./battery-image";
@@ -34,11 +36,11 @@ const COLOR = /^#[0-9a-f]{6}$/i;
 type Shown = { key: KeyAction<JsonObject>; style: Style };
 
 /**
- * The Battery key: shows how full the mouse's battery is, the level the mouse puts that at, and whether it's charging,
+ * The Battery key: shows how full the mouse's battery is, colored by the level that's at, and whether it's charging,
  * redrawing its image from each reading. Every key shows the same reading, since there's one mouse. The battery is read
  * when a key appears, when one is pressed, and every {@link REFRESH_MS} while one is shown. A mouse that doesn't answer,
  * such as one on another host, greys the key out, keeping the last reading. Each key draws it on the background its
- * settings choose, with the mouse and the battery they choose.
+ * settings choose, with the mouse, the battery, the bolt and the levels they choose.
  */
 @action({ UUID: "com.daczarne.mx3s.battery" })
 export class BatteryAction extends SingletonAction {
@@ -121,7 +123,7 @@ const BOLT_SHOWN: readonly BoltShown[] = ["always", "charging", "never"];
 
 /**
  * The style a key's settings choose: its background, its mouse, whether it shows the battery, which it does unless
- * `showBattery` is unchecked, and its bolt.
+ * `showBattery` is unchecked, its bolt, and its levels.
  */
 export function styleOf(settings: JsonObject): Style {
   return {
@@ -129,6 +131,21 @@ export function styleOf(settings: JsonObject): Style {
     mouse: mouseOf(settings),
     showBattery: settings.showBattery !== false,
     bolt: boltOf(settings),
+    levels: levelsOf(settings),
+  };
+}
+
+/**
+ * The levels a key's settings choose: their colors, from `highColor`, `mediumColor` and `lowColor`, and the
+ * percentages the medium level is between, from `mediumFrom` and `mediumTo`.
+ */
+function levelsOf(settings: JsonObject): Levels {
+  return {
+    high: colorOf(settings, "highColor", DEFAULT_LEVELS.high),
+    medium: colorOf(settings, "mediumColor", DEFAULT_LEVELS.medium),
+    mediumFrom: percentageOf(settings, "mediumFrom", DEFAULT_LEVELS.mediumFrom),
+    mediumTo: percentageOf(settings, "mediumTo", DEFAULT_LEVELS.mediumTo),
+    low: colorOf(settings, "lowColor", DEFAULT_LEVELS.low),
   };
 }
 
@@ -175,6 +192,22 @@ function mouseOf(settings: JsonObject): MouseStyle | undefined {
   const fallback = DEFAULT_MOUSE.filled ? "filled" : "outlined";
   logger.warn(`Setting mouseStyle is ${JSON.stringify(style)}, not filled or outlined: using ${fallback}`);
   return { color, filled: DEFAULT_MOUSE.filled };
+}
+
+/**
+ * The percentage a key's setting `setting` holds, a number from 0 to 100, as the settings page saves it. A key that has
+ * none yet takes `fallback`, and so does one whose setting isn't one, with a warning.
+ */
+function percentageOf(settings: JsonObject, setting: string, fallback: number): number {
+  const value: JsonValue | undefined = settings[setting];
+  if (value === undefined) {
+    return fallback;
+  }
+  if (typeof value === "number" && value >= 0 && value <= 100) {
+    return value;
+  }
+  logger.warn(`Setting ${setting} is ${JSON.stringify(value)}, not a percentage: using ${fallback}`);
+  return fallback;
 }
 
 /**
