@@ -132,6 +132,39 @@ jobs:
         # Runs check:ui, the build and streamdeck validate.
         run: npm run validate
 
+  browser-tests:
+    name: Browser tests
+    runs-on: ubuntu-24.04
+    # Independent of the code checks: they load the settings pages from the plugin folder, which needs no build, so
+    # they run beside them rather than after them.
+    needs:
+      - lint
+      - spell-check
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout 🛎️
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node 🟢
+        id: setup_node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install dependencies 📦
+        id: install_dependencies
+        run: npm ci --ignore-scripts
+      - name: Browser tests 🧪
+        id: browser_tests
+        # Drives the Google Chrome that comes installed on the runner, at whatever version the runner image has.
+        # If Chrome starts failing here with "No usable sandbox", the runner's Ubuntu is restricting the user
+        # namespaces Chrome's sandbox needs. Adding --no-sandbox to the flags in browser-tests/support/chrome.ts,
+        # for CI only, is acceptable: Chrome only ever loads the plugin's own local pages there.
+        run: npm run test:browser
+
   alls-green:
     name: Ensure all checks have passed
     if: always()
@@ -141,6 +174,7 @@ jobs:
       - lint
       - spell-check
       - code
+      - browser-tests
     permissions: {}
     steps:
       - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0

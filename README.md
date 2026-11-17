@@ -111,6 +111,7 @@ npm run typecheck         # type-check the sources, and the build and check scri
 npm run lint              # Biome: lint rules, formatting and import order, without changing anything
 npm run format            # Biome: apply the formatting and the import order
 npm test                  # run the unit tests
+npm run test:browser      # run the browser tests, which need Chrome
 npm run check:ui          # settings pages: no remote resources or inline styles, CSP and stylesheet on every page, vendored file matches its hash
 npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
@@ -123,7 +124,9 @@ The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each
 The settings pages (Property Inspector), in `com.daczarne.mx3s.sdPlugin/ui/`, load nothing remote, and two layers keep it that way:
 
 - **When building.** `npm run check:ui` (also run by `validate`) fails if any `ui/*.html` loads a remote resource, lacks the Content-Security-Policy below or declares a different one, has an inline script or an inline style, or doesn't link the pages' stylesheet, `ui/settings.css`. It also fails if the vendored sdpi-components doesn't match its pinned hash (see [Third-party code](#third-party-code)).
-- **When Stream Deck shows them.** Each page declares a Content-Security-Policy in a `<meta>`, so Stream Deck refuses whatever the policy doesn't allow, even if it slipped past the check. [`docs/manual_testing/settings_pages.md`][settings-pages-checks] checks on the Deck that it does.
+- **When Stream Deck shows them.** Each page declares a Content-Security-Policy in a `<meta>`, so Stream Deck refuses whatever the policy doesn't allow, even if it slipped past the check.
+
+The browser tests (`npm run test:browser`, also run in CI) check that the policy works. They load each page in a headless Chrome, as Stream Deck would, and confirm that it refuses remote scripts, styles, images and connections, and inline scripts and styles, and that each page takes every style from `ui/settings.css`, but for the one sdpi-components adds. They also check the controls each page shows, that each control's default and values are ones the plugin takes, the settings it sends, and the Battery page's own logic: the settings it greys out, its Reset buttons and the levels it writes out, against a fake that stands in for Stream Deck. They run in Chrome rather than in Stream Deck itself, so [`docs/manual_testing/settings_pages.md`][settings-pages-checks] lists the checks that only the Deck can prove.
 
 The policy allows only what the pages need:
 

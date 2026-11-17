@@ -31,7 +31,8 @@
     "typecheck": "tsc --noEmit -p . && tsc -p tsconfig.scripts.json",
     "lint": "biome ci",
     "format": "biome check --write --linter-enabled=false",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.mjs"
   },
   "type": "module",
   "devEngines": {

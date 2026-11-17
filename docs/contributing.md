@@ -34,6 +34,7 @@ Commit messages on a branch disappear in the squash. They stay short and accurat
 Every new feature or enhancement comes with automated tests for it, in the same pull request. Otherwise the branch that adds the feature can also add its bugs, typically in edge cases nobody tested. The issue isn't done until the tests are in.
 
 - A unit test covers one module, with the modules it builds on faked, or the mouse emulated for the code that talks to it: its logic and its edge cases, such as invalid settings, logs and each kind of failure. An integration test covers what crosses modules: that what one module reports or sends reaches the next as that one expects.
+- A browser test covers a settings page, loaded in a headless Chrome under its Content-Security-Policy, with a fake for Stream Deck: what the policy refuses, the controls the page shows and the settings it sends, and its script's logic, such as the Battery page's Reset buttons.
 - What can't be automated, such as Stream Deck's own behavior or what the mouse does, is checked by hand on the Deck. Those checks are written down in `docs/manual_testing/`, one document per area, with when to run them and what each one should show, so that anyone can repeat them without remembering how. A feature that needs new manual checks adds them there, in the same pull request.
 - A bug the tests find, which the branch doesn't fix, gets a test stating the intended behavior, marked as failing and linked to its own issue. When the bug is fixed, the test starts passing, and it becomes a normal test.
 
@@ -49,7 +50,7 @@ Every dependency is pinned, and every upgrade is a deliberate change of its own.
 - `sharp`, which renders the icons, ships its image library, libvips, as a native binary, one optional dependency per platform, so its upgrades can't be reviewed from source in the lockfile diff. The diff still shows which packages changed and where they come from. An upgrade can change how the icons are drawn, such as their antialiasing, which the icons check reports: run `npm run icons`, look at what changed, and commit the regenerated images with the upgrade.
 - No remote code runs inside Stream Deck. A library the settings pages load is vendored into the plugin folder, with its hash recorded, rather than loaded from a CDN.
 - GitHub Actions are pinned to full commit SHAs, with the version as a trailing comment, checked against the release tag. Like npm packages, they're upgraded by hand.
-- CI's runners are pinned to an Ubuntu release (`ubuntu-24.04`), not `ubuntu-latest`, which GitHub moves to a new release on its own schedule. A release's image still gets GitHub's updates, but a new release can drop tools and change the default versions of others. Moving to a newer release is an upgrade of its own.
+- CI's runners are pinned to an Ubuntu release (`ubuntu-24.04`), not `ubuntu-latest`, which GitHub moves to a new release on its own schedule, with the tools its image comes with, such as the Chrome the browser tests drive. A release's image still gets GitHub's updates, but a new release can drop tools and change the default versions of others. Moving to a newer release is an upgrade of its own.
 
 ## Unused code
 
