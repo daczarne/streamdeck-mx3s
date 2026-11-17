@@ -111,7 +111,7 @@ npm run typecheck         # type-check the sources, and the build and check scri
 npm run lint              # Biome: lint rules, formatting and import order, without changing anything
 npm run format            # Biome: apply the formatting and the import order
 npm test                  # run the unit tests
-npm run check:ui          # settings pages: no remote resources, CSP on every page, vendored file matches its hash
+npm run check:ui          # settings pages: no remote resources or inline styles, CSP and stylesheet on every page, vendored file matches its hash
 npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```
@@ -122,22 +122,22 @@ The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each
 
 The settings pages (Property Inspector), in `com.daczarne.mx3s.sdPlugin/ui/`, load nothing remote, and two layers keep it that way:
 
-- **When building.** `npm run check:ui` (also run by `validate`) fails if any `ui/*.html` loads a remote resource, lacks the Content-Security-Policy below or declares a different one, or has an inline script. It also fails if the vendored sdpi-components doesn't match its pinned hash (see [Third-party code](#third-party-code)).
-- **When Stream Deck shows them.** Each page declares a Content-Security-Policy in a `<meta>`, so Stream Deck refuses whatever the policy doesn't allow, even if it slipped past the check.
+- **When building.** `npm run check:ui` (also run by `validate`) fails if any `ui/*.html` loads a remote resource, lacks the Content-Security-Policy below or declares a different one, has an inline script or an inline style, or doesn't link the pages' stylesheet, `ui/settings.css`. It also fails if the vendored sdpi-components doesn't match its pinned hash (see [Third-party code](#third-party-code)).
+- **When Stream Deck shows them.** Each page declares a Content-Security-Policy in a `<meta>`, so Stream Deck refuses whatever the policy doesn't allow, even if it slipped past the check. [`docs/manual_testing/settings_pages.md`][settings-pages-checks] checks on the Deck that it does.
 
 The policy allows only what the pages need:
 
-| Directive                      | Allows                                                                              |
-|--------------------------------|-------------------------------------------------------------------------------------|
-| `default-src 'none'`           | Nothing that the directives below don't allow.                                      |
-| `script-src 'self'`            | Scripts from the plugin folder. No inline scripts and no `eval`.                    |
-| `style-src 'unsafe-inline'`    | The `<style>` elements of the pages and the one sdpi-components adds to every page. |
-| `img-src data:`                | The icons that sdpi-components draws as `data:` SVGs, such as its check marks.      |
-| `connect-src ws://localhost:*` | The WebSocket to Stream Deck, on the port Stream Deck passes to the page.           |
-| `base-uri 'none'`              | No `<base>` element, which would change where relative paths point.                 |
-| `form-action 'none'`           | No form submissions.                                                                |
+| Directive                      | Allows                                                                                                                                                               |
+|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `default-src 'none'`           | Nothing that the directives below don't allow.                                                                                                                       |
+| `script-src 'self'`            | Scripts from the plugin folder. No inline scripts and no `eval`.                                                                                                     |
+| `style-src 'self' 'sha256-…'`  | Stylesheets from the plugin folder, and the one `<style>` element sdpi-components adds to every page, by the hash of its text. No other inline style, nor attribute. |
+| `img-src data:`                | The icons that sdpi-components draws as `data:` SVGs, such as its check marks.                                                                                       |
+| `connect-src ws://localhost:*` | The WebSocket to Stream Deck, on the port Stream Deck passes to the page.                                                                                            |
+| `base-uri 'none'`              | No `<base>` element, which would change where relative paths point.                                                                                                  |
+| `form-action 'none'`           | No form submissions.                                                                                                                                                 |
 
-Since inline scripts are blocked, a page's own logic goes in a `.js` file in `ui/`. The policy is repeated in each page and in [`scripts/check-ui.mjs`][check-ui], so a change to it updates all of them and the table above.
+Since inline scripts are blocked, a page's own logic goes in a `.js` file in `ui/`. Since inline styles are blocked too, every style of the pages is in `ui/settings.css` ([#33]), which each page links. sdpi-components' own style is the one inline style allowed: its text is fixed by the vendored file's pinned hash, and `scripts/check-ui.mjs` computes the policy's hash of it from that file. The policy is repeated in each page and in [`scripts/check-ui.mjs`][check-ui], so a change to it updates all of them and the table above.
 
 ## Packaging
 
@@ -167,7 +167,7 @@ The settings pages use [sdpi-components][sdpi] (MIT), vendored at `com.daczarne.
 - **Source:** [`dist/sdpi-components.js` at tag `v4.0.1`][sdpi-source] (commit `06185f1452`)
 - **Pinned hash:** sha256 in [`scripts/check-ui.mjs`][check-ui], checked by `npm run check:ui`
 
-To update it, download `dist/sdpi-components.js` from the new upstream tag (not from npm: the `sdpi-components` package there is unrelated to this project), review the diff, replace the vendored file, and update the version and commit here and the hash in `scripts/check-ui.mjs`.
+To update it, download `dist/sdpi-components.js` from the new upstream tag (not from npm: the `sdpi-components` package there is unrelated to this project), review the diff, replace the vendored file, and update the version and commit here and the hash in `scripts/check-ui.mjs`. When the style sdpi-components adds to every page changes, `npm run check:ui` gives the policy with its new hash, which goes in every page.
 
 ## Credits
 
@@ -179,6 +179,7 @@ To update it, download `dist/sdpi-components.js` from the new upstream tag (not 
 The plugin is MIT licensed: see [`LICENSE`][license].
 
 [#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
+[#33]: https://github.com/daczarne/streamdeck-mx3s/issues/33
 [bug-report]: https://github.com/daczarne/streamdeck-mx3s/issues/new?template=bug_report.yaml
 [check-ui]: scripts/check-ui.mjs
 [contributing]: docs/contributing.md
@@ -193,6 +194,7 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [sdk]: https://docs.elgato.com/streamdeck
 [sdpi]: https://github.com/GeekyEggo/sdpi-components
 [sdpi-source]: https://github.com/GeekyEggo/sdpi-components/blob/v4.0.1/dist/sdpi-components.js
+[settings-pages-checks]: docs/manual_testing/settings_pages.md
 [solaar]: https://github.com/pwr-Solaar/Solaar
 [stream-deck]: https://www.elgato.com/streamdeck
 [streamdeck-icons]: https://github.com/daczarne/streamdeck-icons

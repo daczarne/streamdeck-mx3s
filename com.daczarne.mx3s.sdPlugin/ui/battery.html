@@ -9,67 +9,15 @@
       content="
         default-src 'none';
         script-src 'self';
-        style-src 'unsafe-inline';
+        style-src 'self' 'sha256-vKw8ls2elF9883OhOYVfGxLK/KT9XeS8Exwh3wy8CrM=';
         img-src data:;
         connect-src ws://localhost:*;
         base-uri 'none';
         form-action 'none'
       "
     />
+    <link rel="stylesheet" href="settings.css" />
     <script src="vendor/sdpi-components.js"></script>
-    <style>
-      /* A row of controls side by side: a narrow color picker or a checkbox, with the controls that go with it. */
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .row sdpi-color {
-        flex: 0 0 72px;
-      }
-
-      /* Radio buttons in a row sit at its right end, apart from the checkbox at its left. Their columns are shares of
-         their width, so they get one, just enough for two options side by side: without it, they shrink to their
-         widest option, and stack. */
-      .row sdpi-radio {
-        flex: 0 0 150px;
-        margin-left: auto;
-      }
-
-      /* A percentage's dropdown, just wide enough for 100% and its arrow. The medium level's row, with two of them, keeps
-         its controls closer together to fit. */
-      .row sdpi-select {
-        flex: 0 0 56px;
-      }
-
-      .row.levels {
-        gap: 8px;
-      }
-
-      /* Text between a row's controls, in sdpi-components' font and text color, written out, since it's outside them. */
-      .note {
-        color: #d8d8d8;
-        font-family: "Segoe UI", Arial, Roboto, Helvetica, sans-serif;
-        font-size: 9pt;
-      }
-
-      /* Each section's heading, across the page, with a line under it, as the Litra plugin's settings draw theirs.
-         Outside sdpi-components' rows, so in its font and text color, written out. */
-      .section-heading {
-        border-bottom: 1px solid #666;
-        color: #d8d8d8;
-        font-family: "Segoe UI", Arial, Roboto, Helvetica, sans-serif;
-        font-size: 11pt;
-        font-weight: 600;
-        margin: 16px 0 8px;
-        padding-bottom: 4px;
-      }
-
-      section:first-of-type .section-heading {
-        margin-top: 0;
-      }
-    </style>
   </head>
 
   <body>
