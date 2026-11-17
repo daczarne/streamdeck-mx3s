@@ -8,6 +8,7 @@
   "include": [
     "rollup.config.mjs",
     "vitest.config.mjs",
+    "vitest.browser.config.mjs",
     "scripts/check-ui.mjs",
     "scripts/generate-icons.mjs",
     "scripts/package-files.mjs",

@@ -6,7 +6,7 @@
 - [Checks](#checks)
 - [Afterwards](#afterwards)
 
-`npm run check:ui` checks that every settings page declares the plugin's Content-Security-Policy, links the pages' stylesheet, `ui/settings.css`, and has no inline script or style ([#33]). Nothing loads the pages under that policy on a pull request, since the repository has no browser tests, so the checks below cover what only Stream Deck can prove: that it enforces the policy, that it allows the one `<style>` element sdpi-components adds to every page, by the hash of its text, and that the pages take their styles from the stylesheet.
+`npm run check:ui` checks that every settings page declares the plugin's Content-Security-Policy, links the pages' stylesheet, `ui/settings.css`, and has no inline script or style ([#33]). The browser tests (`npm run test:browser`) load every page under that policy on every pull request, in a headless Chrome, and check that it refuses anything remote and any inline script or style, and that each page takes its styles from the stylesheet. They run in Chrome, not in Stream Deck, whose own Chromium is older, so the checks below cover what only Stream Deck can prove: that it enforces the policy, that it allows the one `<style>` element sdpi-components adds to every page, by the hash of its text, and that the pages take their styles from the stylesheet.
 
 ## When to run these checks
 

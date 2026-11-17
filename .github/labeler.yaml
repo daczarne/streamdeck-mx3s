@@ -27,9 +27,11 @@ mx3s:
 tests:
   - changed-files:
       - any-glob-to-any-file:
+          - browser-tests/**
           - scripts/*.test.ts
           - src/**/*.test.ts
           - src/test-support/**
+          - vitest.browser.config.mjs
           - vitest.config.mjs
 tools:
   - changed-files:
