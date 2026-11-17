@@ -26,10 +26,13 @@ Download `com.daczarne.mx3s.streamDeckPlugin` from the release's page. Then open
 2. **It installs.** Open the file: Stream Deck installs the plugin, and the **MX Master 3S** category lists the Set Host and Battery actions, with their icons. When an older release is installed, the new one replaces it, and the keys already placed keep their hosts.
 3. **The installed plugin switches the mouse and reads its battery.** Run checks 1, 2, 3, 5 and 6 of [the Set Host checks][set-host], and checks 1, 3, 4, 5, 9 to 16 of [the Battery checks][battery], on the installed plugin. On macOS, also run check 4 of the Set Host checks: no permission is asked for.
 4. **It logs in its own folder.** The log folder holds `mx3s.log`, starting with `Plugin started`, and then the lines of each press: nothing came from the computer that built the package. On Windows, each press's `Opening a receiver's HID++ channel` line names two paths, one with `Col01` and one with `Col02`: a line with one path means the plugin took them for two receivers.
-5. **It ships its licenses.** The plugin's `bin/` folder, next to `logs/`, holds `LICENSE` and `THIRD_PARTY_LICENSES.txt`.
-6. **It's removed cleanly.** Uninstall the plugin from the **Plugins** tab of Stream Deck's preferences: its actions leave the list, and its folder, logs included, is gone.
+5. **Its settings pages keep their look.** Select a Set Host key and a Battery key: each page has the panel's dark grey background, which sdpi-components' style gives it, and the Battery page's settings sit in rows under section headings with a line under each, which `ui/settings.css` draws. A page without the grey, or with its settings stacked one under the other, is one whose policy Stream Deck refused a style under, which [the settings pages checks][settings-pages] look into on macOS ([#33]).
+6. **It ships its licenses.** The plugin's `bin/` folder, next to `logs/`, holds `LICENSE` and `THIRD_PARTY_LICENSES.txt`.
+7. **It's removed cleanly.** Uninstall the plugin from the **Plugins** tab of Stream Deck's preferences: its actions leave the list, and its folder, logs included, is gone.
 
+[#33]: https://github.com/daczarne/streamdeck-mx3s/issues/33
 [battery]: battery.md
 [probes]: ../../scripts/probes/README.md
 [releases]: ../releases.md
 [set-host]: set_host.md
+[settings-pages]: settings_pages.md

@@ -11,7 +11,8 @@
       "scripts/**/*.mjs",
       "scripts/**/*.test.ts",
       "*.mjs",
-      "com.daczarne.mx3s.sdPlugin/ui/*.js"
+      "com.daczarne.mx3s.sdPlugin/ui/*.js",
+      "com.daczarne.mx3s.sdPlugin/ui/*.css"
     ]
   },
   "formatter": {
@@ -28,6 +29,15 @@
       "quoteStyle": "double",
       "semicolons": "always",
       "trailingCommas": "all"
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "quoteStyle": "double"
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "linter": {
