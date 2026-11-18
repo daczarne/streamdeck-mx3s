@@ -197,7 +197,7 @@ describe("check-ui", () => {
     expect(stderr).toContain("ui/second.html: no Content-Security-Policy");
   });
 
-  it("refuses an inline script whose tag spans several lines, reporting the line it starts on (daczarne/streamdeck-litra#111)", () => {
+  it("refuses an inline script whose tag spans several lines, reporting the line it starts on", () => {
     writePage("page.html", page({ head: "    <script\n      type=\"module\">document.title = 'x';</script>" }));
 
     const { status, stderr } = check();
@@ -208,7 +208,7 @@ describe("check-ui", () => {
     );
   });
 
-  it("refuses a remote resource whose address is on the line after its attribute (daczarne/streamdeck-litra#111)", () => {
+  it("refuses a remote resource whose address is on the line after its attribute", () => {
     writePage("page.html", page({ head: '    <script src=\n      "https://example.com/page.js"></script>' }));
 
     const { status, stderr } = check();

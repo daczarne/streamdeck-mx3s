@@ -20,7 +20,7 @@ Not an official Logitech or Elgato product.
 
 ## Status
 
-The plugin has two actions: [Set Host](#the-set-host-key), a key that sends the mouse to one of its hosts, and [Battery](#the-battery-key), a key that shows how much battery the mouse has left. It talks to the mouse through a Logi Bolt receiver, with no permission and no Logitech software. It does so in-process, over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid], the same way [the Litra plugin][streamdeck-litra] controls Logitech lights.
+The plugin has two actions: [Set Host](#the-set-host-key), a key that sends the mouse to one of its hosts, and [Battery](#the-battery-key), a key that shows how much battery the mouse has left. It talks to the mouse through a Logi Bolt receiver, with no permission and no Logitech software. It does so in-process, over HID++ 2.0, Logitech's protocol, through [`node-hid`][node-hid].
 
 Once a computer sends the mouse to another host, it loses the mouse and can't call it back. A key can send the mouse to a host, but a key that toggles between two hosts can't work. The mouse comes back with its own button, or from the other host.
 
@@ -201,5 +201,4 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [solaar]: https://github.com/pwr-Solaar/Solaar
 [stream-deck]: https://www.elgato.com/streamdeck
 [streamdeck-icons]: https://github.com/daczarne/streamdeck-icons
-[streamdeck-litra]: https://github.com/daczarne/streamdeck-litra
 [style-guide]: docs/style_guide.md
