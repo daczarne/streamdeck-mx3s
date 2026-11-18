@@ -102,7 +102,9 @@ describe("SetHostAction", () => {
       await deck.press(key);
 
       expect(switchHost).toHaveBeenCalledExactlyOnceWith(1);
-      expect(logger.warn).toHaveBeenCalledWith(`Setting host is ${JSON.stringify(host)}, not one of 1, 2, 3: using 1`);
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Setting host is ${JSON.stringify(host)}, not a whole number from 1 to 3: using 1`,
+      );
     });
   });
 });

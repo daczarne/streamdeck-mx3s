@@ -11,6 +11,7 @@ osascript
 prebuilds
 redhat
 rollup
+rrggbb
 Srvs
 vitest
 yzhang
