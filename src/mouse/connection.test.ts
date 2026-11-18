@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { logger } from "./logging";
-import { callFeature, type Mouse, reachMouse, sendFeature } from "./mouse";
-import { CHANGE_HOST, EmulatedReceiver } from "./test-support/emulated-receiver";
-import { connect, failListingDevices, type HidEvent, hidEvents } from "./test-support/fake-node-hid";
+import { logger } from "../logging";
+import { CHANGE_HOST, EmulatedReceiver } from "../test-support/emulated-receiver";
+import { connect, failListingDevices, type HidEvent, hidEvents } from "../test-support/fake-node-hid";
+import { callFeature, type MouseConnection, reachMouse, sendFeature } from "./connection";
 
 //* Fakes
 
 // The plugin talks to emulated receivers, never to the ones plugged in.
-vi.mock("node-hid", () => import("./test-support/fake-node-hid"));
+vi.mock("node-hid", () => import("../test-support/fake-node-hid"));
 // The real logger writes to a logs/ folder.
-vi.mock("./logging", () => import("./test-support/fake-logging"));
+vi.mock("../logging", () => import("../test-support/fake-logging"));
 
 // A keyboard, paired with a receiver beside the mouse: another product, which has no CHANGE_HOST.
 const KEYBOARD = 0xb35b;
@@ -82,7 +82,7 @@ describe("reachMouse", () => {
     const receiver = new EmulatedReceiver();
     receiver.pair(1, { changeHost: 0 });
     connect(receiver);
-    const use = vi.fn((_mouse: Mouse) => Promise.resolve());
+    const use = vi.fn((_mouse: MouseConnection) => Promise.resolve());
 
     const result = await reachMouse(CHANGE_HOST, use);
 

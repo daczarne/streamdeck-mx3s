@@ -3,8 +3,8 @@ import type { Device as HidDeviceInfo } from "node-hid";
 import type { EmulatedReceiver, ReceiverHandle } from "./emulated-receiver";
 
 /**
- * Stands in for `node-hid` in the tests that run `src/mouse.ts`, which mock it with
- * `vi.mock("node-hid", () => import("./test-support/fake-node-hid"))`, so that the plugin talks to emulated receivers
+ * Stands in for `node-hid` in the tests that run `src/mouse/connection.ts`, which mock it with
+ * `vi.mock("node-hid", () => import("../test-support/fake-node-hid"))`, so that the plugin talks to emulated receivers
  * instead of the ones plugged into the machine. Only the parts of node-hid's async API the plugin uses are here.
  */
 

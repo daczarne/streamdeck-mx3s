@@ -8,7 +8,7 @@ The unit tests check against emulated receivers how the plugin reads the battery
 
 ## When to run these checks
 
-- After a change to `src/battery.ts`, `src/mouse.ts`, `src/actions/battery.ts` or `src/actions/battery-image.ts`, to the key's images or to its settings page.
+- After a change to `src/mouse/battery.ts`, `src/mouse/connection.ts`, `src/actions/battery.ts` or `src/controls/battery-image.ts`, to the key's images or to its settings page.
 - After an update of `@daczarne/streamdeck-icons`, whose glyphs, palette and figures the key is drawn from.
 - After an upgrade of `node-hid`, `@elgato/streamdeck` or `@elgato/utils`.
 - After a Stream Deck or macOS update.

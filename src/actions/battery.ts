@@ -8,9 +8,6 @@ import {
   type WillDisappearEvent,
 } from "@elgato/streamdeck";
 import type { JsonObject, JsonValue } from "@elgato/utils";
-
-import { type Battery, readBattery } from "../battery";
-import { logger as pluginLogger } from "../logging";
 import {
   type BatteryStyle,
   type BoltShown,
@@ -26,7 +23,9 @@ import {
   type MouseStyle,
   type NotFoundStyle,
   type Style,
-} from "./battery-image";
+} from "../controls/battery-image";
+import { logger as pluginLogger } from "../logging";
+import { type Battery, readBattery } from "../mouse/battery";
 
 const logger = pluginLogger.createScope("Battery key");
 

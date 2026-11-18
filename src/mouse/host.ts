@@ -1,10 +1,10 @@
 /**
  * Sends the MX Master 3S to one of its Easy-Switch hosts, through its CHANGE_HOST feature, on the mouse reached by
- * `mouse.ts`. Once a computer sends the mouse to another host, it can't call it back: the mouse comes back with its own
- * button, or from the other host.
+ * `connection.ts`. Once a computer sends the mouse to another host, it can't call it back: the mouse comes back with
+ * its own button, or from the other host.
  */
-import { logger as pluginLogger } from "./logging";
-import { callFeature, type Mouse, reachMouse, sendFeature, type Unreached } from "./mouse";
+import { logger as pluginLogger } from "../logging";
+import { callFeature, type MouseConnection, reachMouse, sendFeature, type Unreached } from "./connection";
 
 const logger = pluginLogger.createScope("Host");
 
@@ -27,7 +27,7 @@ export function switchHost(host: number): Promise<SwitchResult> {
 }
 
 /** Sends the mouse reached to `host`, after checking it against the mouse's hosts. */
-async function switchTo(mouse: Mouse, host: number): Promise<SwitchResult> {
+async function switchTo(mouse: MouseConnection, host: number): Promise<SwitchResult> {
   const { count, current } = await hostInfo(mouse);
   if (host < 1 || host > count) {
     logger.warn(`The MX Master 3S has ${count} hosts, so it can't go to host ${host}`);
@@ -44,7 +44,7 @@ async function switchTo(mouse: Mouse, host: number): Promise<SwitchResult> {
 }
 
 /** How many Easy-Switch hosts the mouse has, and which one it's on, counted from 1 as on the mouse: `getHostInfo`. */
-async function hostInfo(mouse: Mouse): Promise<{ count: number; current: number }> {
+async function hostInfo(mouse: MouseConnection): Promise<{ count: number; current: number }> {
   const reply = await callFeature(mouse, 0);
   return { count: reply[4] ?? 0, current: (reply[5] ?? 0) + 1 };
 }

@@ -1,11 +1,6 @@
 import { readFileSync } from "node:fs";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { type Battery, type BatteryResult, readBattery } from "../battery";
-import { logger } from "../logging";
-import { FakeDeck } from "../test-support/fake-deck";
-import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
 import {
   batteryImage,
   DEFAULT_BACKGROUND,
@@ -14,7 +9,11 @@ import {
   DEFAULT_LEVELS,
   DEFAULT_MOUSE,
   DEFAULT_NOT_FOUND,
-} from "./battery-image";
+} from "../controls/battery-image";
+import { logger } from "../logging";
+import { type Battery, type BatteryResult, readBattery } from "../mouse/battery";
+import { FakeDeck } from "../test-support/fake-deck";
+import { BatteryAction, REFRESH_MS, styleOf } from "./battery";
 
 //* Fakes
 
@@ -23,9 +22,9 @@ vi.mock("@elgato/streamdeck", () => import("../test-support/fake-stream-deck"));
 // The real logger writes to a logs/ folder.
 vi.mock("../logging", () => import("../test-support/fake-logging"));
 
-// The real battery module reaches the mouse through `src/mouse.ts`, which loads node-hid's native binary on import and
-// talks to the receivers plugged in.
-vi.mock("../battery", () => ({ readBattery: vi.fn() }));
+// The real battery module reaches the mouse through `src/mouse/connection.ts`, which loads node-hid's native binary on
+// import and talks to the receivers plugged in.
+vi.mock("../mouse/battery", () => ({ readBattery: vi.fn() }));
 
 const BATTERY = "com.daczarne.mx3s.battery";
 
