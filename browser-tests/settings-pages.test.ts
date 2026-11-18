@@ -5,22 +5,10 @@ import { pathToFileURL } from "node:url";
 import type { JsonObject, JsonValue } from "@elgato/utils";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { styleOf } from "../src/actions/battery";
-import { hostOf } from "../src/actions/set-host";
-import { logger } from "../src/logging";
+import { batterySettingsSchema, parseSettings, setHostSettingsSchema } from "../src/settings/schemas";
 import { at } from "../src/test-support/at";
 import { Chrome, type ExceptionDetails, type Page } from "./support/chrome";
 import { FakeStreamDeck, type StreamDeckMessage } from "./support/fake-stream-deck";
-
-//* Fakes
-
-// The actions read the settings the pages save, which the tests compare the pages with. The real SDK opens a
-// connection to Stream Deck on import, the real logger writes to a logs/ folder, and the mouse's modules load node-hid,
-// which the actions don't need to read their settings.
-vi.mock("@elgato/streamdeck", () => import("../src/test-support/fake-stream-deck"));
-vi.mock("../src/logging", () => import("../src/test-support/fake-logging"));
-vi.mock("../src/mouse/battery", () => ({ readBattery: vi.fn() }));
-vi.mock("../src/mouse/host", () => ({ switchHost: vi.fn() }));
 
 const pluginDir = path.resolve("com.daczarne.mx3s.sdPlugin");
 const manifest = JSON.parse(readFileSync(path.join(pluginDir, "manifest.json"), "utf8")) as {
@@ -34,8 +22,8 @@ type Panel = {
   settings: string[];
   /** A setting to change through its control, and the value Stream Deck should receive for it. */
   change: { setting: string; value: string; saved: JsonValue };
-  /** How the plugin reads the page's settings, and warns of one it doesn't take. */
-  read: (settings: JsonObject) => unknown;
+  /** The schema the plugin reads the page's settings against, which warns of one it doesn't take. */
+  schema: Parameters<typeof parseSettings>[1];
 };
 
 // What each settings page shows on each controller its action supports, as listed in manifest.json.
@@ -45,7 +33,7 @@ const PANELS: Panel[] = [
     controller: "Keypad",
     settings: ["host"],
     change: { setting: "host", value: "2", saved: "2" },
-    read: hostOf,
+    schema: setHostSettingsSchema,
   },
   {
     page: "ui/battery.html",
@@ -75,7 +63,7 @@ const PANELS: Panel[] = [
       "notFoundColor",
     ],
     change: { setting: "showBolt", value: "charging", saved: "charging" },
-    read: styleOf,
+    schema: batterySettingsSchema,
   },
 ];
 
@@ -97,9 +85,9 @@ function sameCase(value: unknown): unknown {
  * it took them as they are, as opposed to replacing one with its default, with a warning.
  */
 function read(panel: Panel, settings: JsonObject): { value: unknown; valid: boolean } {
-  vi.mocked(logger.warn).mockClear();
-  const value = sameCase(panel.read(settings));
-  return { value, valid: vi.mocked(logger.warn).mock.calls.length === 0 };
+  const warn = vi.fn();
+  const value = sameCase(parseSettings(settings, panel.schema, { warn }));
+  return { value, valid: warn.mock.calls.length === 0 };
 }
 
 let chrome: Chrome;

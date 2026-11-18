@@ -59,7 +59,7 @@ Code or configuration that is unused, misleading or contradicts a decision alrea
 
 ## A module goes in its layer
 
-`src/` is in layers, a folder each, and a module imports only from its own folder and the ones below it: `actions/` and `controls/` are the frontend, what the Deck takes in and displays, and `mouse/` the backend, the mouse and how the plugin reaches it. So the frontend calls the backend, never the other way round, and nothing in the backend knows how the Deck displays what it holds. `src/actions/` holds one module per action, and `src/controls/` what the actions are built from, such as what a key draws. A new module goes in the folder of its layer, and a change to what a folder holds updates its `README.md`, which `src/README.md` lists.
+`src/` is in layers, a folder each, and a module imports only from its own folder and the ones below it: `actions/` and `controls/` are the frontend, what the Deck takes in and displays, and `settings/` and `mouse/` the backend, what Stream Deck keeps and the mouse, and how the plugin reaches it. So the frontend calls the backend, never the other way round, and nothing in the backend knows how the Deck displays what it holds: storing a setting about what a key shows is the backend's work, and what the value turns into on the key the frontend's. `src/actions/` holds one module per action, and `src/controls/` what the actions are built from, such as what a key draws. A new module goes in the folder of its layer, and a change to what a folder holds updates its `README.md`, which `src/README.md` lists.
 
 ## Supported mice
 

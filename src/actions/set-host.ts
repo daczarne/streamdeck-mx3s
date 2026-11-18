@@ -6,15 +6,12 @@ import {
   SingletonAction,
   type WillAppearEvent,
 } from "@elgato/streamdeck";
-import type { JsonObject, JsonValue } from "@elgato/utils";
+import type { JsonObject } from "@elgato/utils";
 import { logger as pluginLogger } from "../logging";
 import { switchHost } from "../mouse/host";
+import { parseSettings, setHostSettingsSchema } from "../settings/schemas";
 
 const logger = pluginLogger.createScope("Set Host");
-
-/** The Easy-Switch hosts, by the numbers on the mouse, and the one a key sends the mouse to until another is chosen. */
-const HOSTS = [1, 2, 3];
-const DEFAULT_HOST = 1;
 
 /**
  * The Set Host key: sends the mouse to the host it's set to, and shows that host in its title. A key can only send the
@@ -50,20 +47,7 @@ async function showHost(key: KeyAction<JsonObject>, settings: JsonObject): Promi
   await key.setTitle(`Host ${hostOf(settings)}`);
 }
 
-/**
- * The host a key's settings choose: a number, or text that is one, since the settings page's radio buttons save their
- * value as text. A key that has none yet takes the default, and so does one whose setting isn't a host, with a warning.
- */
-export function hostOf(settings: JsonObject): number {
-  const value: JsonValue | undefined = settings.host;
-  if (value === undefined) {
-    return DEFAULT_HOST;
-  }
-  const host =
-    typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
-  if (HOSTS.includes(host)) {
-    return host;
-  }
-  logger.warn(`Setting host is ${JSON.stringify(value)}, not one of ${HOSTS.join(", ")}: using ${DEFAULT_HOST}`);
-  return DEFAULT_HOST;
+/** The host a key's settings choose, or host 1, with a warning, when they choose one the mouse doesn't have. */
+function hostOf(settings: JsonObject): number {
+  return parseSettings(settings, setHostSettingsSchema, logger).host;
 }

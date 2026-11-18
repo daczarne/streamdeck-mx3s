@@ -7,33 +7,16 @@ import {
   type WillAppearEvent,
   type WillDisappearEvent,
 } from "@elgato/streamdeck";
-import type { JsonObject, JsonValue } from "@elgato/utils";
-import {
-  type BatteryStyle,
-  type BoltShown,
-  type BoltStyle,
-  batteryImage,
-  DEFAULT_BACKGROUND,
-  DEFAULT_BATTERY,
-  DEFAULT_BOLT,
-  DEFAULT_LEVELS,
-  DEFAULT_MOUSE,
-  DEFAULT_NOT_FOUND,
-  type Levels,
-  type MouseStyle,
-  type NotFoundStyle,
-  type Style,
-} from "../controls/battery-image";
+import type { JsonObject } from "@elgato/utils";
+import { batteryImage, type Style, styleOf } from "../controls/battery-image";
 import { logger as pluginLogger } from "../logging";
 import { type Battery, readBattery } from "../mouse/battery";
+import { batterySettingsSchema, parseSettings } from "../settings/schemas";
 
 const logger = pluginLogger.createScope("Battery key");
 
 /** How often the battery is read again while a Battery key is shown: it drains slowly, and every read wakes the mouse. */
 export const REFRESH_MS = 10 * 60 * 1000;
-
-// A color as the settings page's color picker saves it: `#` and six hex digits.
-const COLOR = /^#[0-9a-f]{6}$/i;
 
 /** A key shown, and how it draws the reading, from its settings. */
 type Shown = { key: KeyAction<JsonObject>; style: Style };
@@ -62,7 +45,7 @@ export class BatteryAction extends SingletonAction {
     if (!ev.action.isKey()) {
       return;
     }
-    const shown = { key: ev.action, style: styleOf(ev.payload.settings) };
+    const shown = { key: ev.action, style: keyStyleOf(ev.payload.settings) };
     this.keys.set(ev.action.id, shown);
     this.timer ??= setInterval(() => this.refresh(), REFRESH_MS);
     await this.show(shown);
@@ -75,7 +58,7 @@ export class BatteryAction extends SingletonAction {
     if (shown === undefined) {
       return;
     }
-    shown.style = styleOf(ev.payload.settings);
+    shown.style = keyStyleOf(ev.payload.settings);
     await this.show(shown);
   }
 
@@ -122,166 +105,7 @@ export class BatteryAction extends SingletonAction {
   }
 }
 
-// When a key can show the bolt, as the settings page saves it.
-const BOLT_SHOWN: readonly BoltShown[] = ["always", "charging", "never"];
-
-/**
- * The style a key's settings choose: its background, its mouse, its battery, its bolt, its levels, and what it shows
- * once the mouse isn't found.
- */
-export function styleOf(settings: JsonObject): Style {
-  const filled = filledOf(settings);
-  return {
-    background: backgroundOf(settings),
-    mouse: mouseOf(settings, filled),
-    battery: batteryOf(settings),
-    bolt: boltOf(settings),
-    levels: levelsOf(settings),
-    notFound: notFoundOf(settings, filled),
-  };
-}
-
-/**
- * What a key's settings choose to show once the mouse isn't found: the mouse, filled as `filled` says, when
- * `notFoundMouse` is checked, the battery and the bolt when `notFoundBattery` and `notFoundBolt` are, all in the color
- * `notFoundColor` holds. It doesn't depend on what the key shows while the mouse is found.
- */
-function notFoundOf(settings: JsonObject, filled: boolean): NotFoundStyle {
-  return {
-    mouse: checkedOf(settings, "notFoundMouse", DEFAULT_NOT_FOUND.mouse !== undefined) ? { filled } : undefined,
-    battery: checkedOf(settings, "notFoundBattery", DEFAULT_NOT_FOUND.battery),
-    bolt: checkedOf(settings, "notFoundBolt", DEFAULT_NOT_FOUND.bolt),
-    color: colorOf(settings, "notFoundColor", DEFAULT_NOT_FOUND.color),
-  };
-}
-
-/**
- * The battery a key's settings choose: none when `showBattery` is unchecked, and otherwise in its level's color unless
- * `batteryFollowsLevel` is unchecked, and then in the color `batteryColor` holds.
- */
-function batteryOf(settings: JsonObject): BatteryStyle | undefined {
-  if (settings.showBattery === false) {
-    return undefined;
-  }
-  return {
-    color: colorOf(settings, "batteryColor", DEFAULT_BATTERY.color),
-    followsLevel: checkedOf(settings, "batteryFollowsLevel", DEFAULT_BATTERY.followsLevel),
-  };
-}
-
-/**
- * The levels a key's settings choose: their colors, from `highColor`, `mediumColor` and `lowColor`, and the
- * percentages the medium level is between, from `mediumFrom` and `mediumTo`.
- */
-function levelsOf(settings: JsonObject): Levels {
-  return {
-    high: colorOf(settings, "highColor", DEFAULT_LEVELS.high),
-    medium: colorOf(settings, "mediumColor", DEFAULT_LEVELS.medium),
-    mediumFrom: percentageOf(settings, "mediumFrom", DEFAULT_LEVELS.mediumFrom),
-    mediumTo: percentageOf(settings, "mediumTo", DEFAULT_LEVELS.mediumTo),
-    low: colorOf(settings, "lowColor", DEFAULT_LEVELS.low),
-  };
-}
-
-/**
- * The bolt a key's settings choose: when it shows, from `showBolt`, and its colors while the mouse charges and while it
- * doesn't, from `boltColor` and `boltIdleColor`, or, while it charges, its level's, when `boltFollowsLevel` is checked.
- * A key that has chosen none yet shows it as the default does, and so does one whose choice isn't one, with a
- * warning.
- */
-function boltOf(settings: JsonObject): BoltStyle {
-  const charging = colorOf(settings, "boltColor", DEFAULT_BOLT.charging);
-  const idle = colorOf(settings, "boltIdleColor", DEFAULT_BOLT.idle);
-  const value: JsonValue | undefined = settings.showBolt;
-  const show = BOLT_SHOWN.find((shown) => shown === value);
-  if (show === undefined && value !== undefined) {
-    logger.warn(
-      `Setting showBolt is ${JSON.stringify(value)}, not one of ${BOLT_SHOWN.join(", ")}: using ${DEFAULT_BOLT.show}`,
-    );
-  }
-  const chargingFollowsLevel = checkedOf(settings, "boltFollowsLevel", DEFAULT_BOLT.chargingFollowsLevel);
-  return { show: show ?? DEFAULT_BOLT.show, charging, chargingFollowsLevel, idle };
-}
-
-/**
- * The background a key's settings choose: none when `noBackground` is checked, and otherwise the color `background`
- * holds.
- */
-function backgroundOf(settings: JsonObject): string | undefined {
-  return settings.noBackground === true ? undefined : colorOf(settings, "background", DEFAULT_BACKGROUND);
-}
-
-/**
- * The mouse a key's settings choose: none when `showMouse` is unchecked, and otherwise the color `mouseColor` holds, or
- * its level's, when `mouseFollowsLevel` is checked, filled as `filled` says.
- */
-function mouseOf(settings: JsonObject, filled: boolean): MouseStyle | undefined {
-  if (settings.showMouse === false) {
-    return undefined;
-  }
-  const color = colorOf(settings, "mouseColor", DEFAULT_MOUSE.color);
-  const followsLevel = checkedOf(settings, "mouseFollowsLevel", DEFAULT_MOUSE.followsLevel);
-  return { color, filled, followsLevel };
-}
-
-/**
- * Whether a key's settings draw the mouse filled: unless `mouseStyle` is `outlined`. A key that has chosen no style yet
- * takes the default, and so does one whose style isn't one, with a warning.
- */
-function filledOf(settings: JsonObject): boolean {
-  const style: JsonValue | undefined = settings.mouseStyle;
-  if (style === undefined || style === "filled" || style === "outlined") {
-    return style === undefined ? DEFAULT_MOUSE.filled : style === "filled";
-  }
-  const fallback = DEFAULT_MOUSE.filled ? "filled" : "outlined";
-  logger.warn(`Setting mouseStyle is ${JSON.stringify(style)}, not filled or outlined: using ${fallback}`);
-  return DEFAULT_MOUSE.filled;
-}
-
-/**
- * Whether the checkbox for a key's setting `setting` is checked. A key that has none yet takes `fallback`, and so does
- * one whose setting isn't true or false, with a warning.
- */
-function checkedOf(settings: JsonObject, setting: string, fallback: boolean): boolean {
-  const value: JsonValue | undefined = settings[setting];
-  if (value === undefined) {
-    return fallback;
-  }
-  if (typeof value === "boolean") {
-    return value;
-  }
-  logger.warn(`Setting ${setting} is ${JSON.stringify(value)}, not true or false: using ${fallback}`);
-  return fallback;
-}
-
-/**
- * The percentage a key's setting `setting` holds, a number from 0 to 100, as the settings page saves it. A key that has
- * none yet takes `fallback`, and so does one whose setting isn't one, with a warning.
- */
-function percentageOf(settings: JsonObject, setting: string, fallback: number): number {
-  const value: JsonValue | undefined = settings[setting];
-  if (value === undefined) {
-    return fallback;
-  }
-  if (typeof value === "number" && value >= 0 && value <= 100) {
-    return value;
-  }
-  logger.warn(`Setting ${setting} is ${JSON.stringify(value)}, not a percentage: using ${fallback}`);
-  return fallback;
-}
-
-/**
- * The color a key's setting `setting` holds. A key that has none yet takes `fallback`, and so does one whose setting
- * isn't a color, with a warning.
- */
-function colorOf(settings: JsonObject, setting: string, fallback: string): string {
-  const value: JsonValue | undefined = settings[setting];
-  if (value === undefined) {
-    return fallback;
-  }
-  if (typeof value === "string" && COLOR.test(value)) {
-    return value;
-  }
-  logger.warn(`Setting ${setting} is ${JSON.stringify(value)}, not a color: using ${fallback}`);
-  return fallback;
+/** How a key's settings draw the reading, each setting that isn't valid taking its default, with a warning. */
+function keyStyleOf(settings: JsonObject): Style {
+  return styleOf(parseSettings(settings, batterySettingsSchema, logger));
 }
