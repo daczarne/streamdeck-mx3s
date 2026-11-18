@@ -13,7 +13,7 @@
  */
 import HID, { type HIDAsync } from "node-hid";
 
-import { logger as pluginLogger } from "./logging";
+import { logger as pluginLogger } from "../logging";
 
 const logger = pluginLogger.createScope("Mouse");
 
@@ -56,7 +56,7 @@ type ChannelPaths = string[];
 type Channel = { short: HIDAsync; handles: HIDAsync[] };
 
 /** The mouse, as reached through a receiver for one operation: its slot, and the index of the feature it uses. */
-export type Mouse = { channel: Channel; slot: number; index: number };
+export type MouseConnection = { channel: Channel; slot: number; index: number };
 
 /** Why an operation couldn't reach the mouse. */
 export type Unreached = { ok: false; outcome: "no-receiver" | "unreachable" | "failed" };
@@ -73,24 +73,24 @@ let queue: Promise<unknown> = Promise.resolve();
  * reached, or a request that failed, and returns that instead of throwing. The receivers it opens are closed before it
  * returns.
  */
-export function reachMouse<T>(feature: number, use: (mouse: Mouse) => Promise<T>): Promise<T | Unreached> {
+export function reachMouse<T>(feature: number, use: (mouse: MouseConnection) => Promise<T>): Promise<T | Unreached> {
   const result = queue.then(() => reachNow(feature, use));
   queue = result.catch(() => undefined);
   return result;
 }
 
 /** Calls function `fn` of the feature the mouse was reached by, with `params`, and returns its reply. */
-export function callFeature(mouse: Mouse, fn: number, params: number[] = []): Promise<number[]> {
+export function callFeature(mouse: MouseConnection, fn: number, params: number[] = []): Promise<number[]> {
   return callAt(mouse.channel, mouse.slot, mouse.index, fn, params);
 }
 
 /** Sends function `fn` of the feature the mouse was reached by, with `params`, for a request that gets no reply. */
-export async function sendFeature(mouse: Mouse, fn: number, params: number[]): Promise<void> {
+export async function sendFeature(mouse: MouseConnection, fn: number, params: number[]): Promise<void> {
   await mouse.channel.short.write(featureReport(mouse.slot, mouse.index, fn, params));
 }
 
 /** {@link reachMouse}, once the operation before it has finished. */
-async function reachNow<T>(feature: number, use: (mouse: Mouse) => Promise<T>): Promise<T | Unreached> {
+async function reachNow<T>(feature: number, use: (mouse: MouseConnection) => Promise<T>): Promise<T | Unreached> {
   let receivers: ChannelPaths[];
   try {
     receivers = await receiverChannels();
@@ -178,7 +178,7 @@ async function receiverChannels(): Promise<ChannelPaths[]> {
  * The MX Master 3S on this receiver, if it answers: the first slot paired with one that tells the index of `feature`.
  * A mouse paired with the receiver but on another channel doesn't answer, or answers with an error.
  */
-async function findMouse(channel: Channel, feature: number): Promise<Mouse | undefined> {
+async function findMouse(channel: Channel, feature: number): Promise<MouseConnection | undefined> {
   for (let slot = 1; slot <= SLOTS; slot++) {
     if ((await productId(channel, slot)) !== MX_MASTER_3S) {
       continue;

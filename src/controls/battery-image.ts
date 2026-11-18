@@ -18,7 +18,7 @@ import {
   WHITE,
 } from "@daczarne/streamdeck-icons";
 
-import type { Battery } from "../battery";
+import type { Battery } from "../mouse/battery";
 
 // The side of the image, in pixels: a key's at high density, which Stream Deck scales down for the others.
 const SIZE = 144;

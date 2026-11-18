@@ -1,16 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import { logger } from "../logging";
+import { EmulatedReceiver } from "../test-support/emulated-receiver";
+import { connect, hidEvents } from "../test-support/fake-node-hid";
 import { switchHost } from "./host";
-import { logger } from "./logging";
-import { EmulatedReceiver } from "./test-support/emulated-receiver";
-import { connect, hidEvents } from "./test-support/fake-node-hid";
 
 //* Fakes
 
 // The mouse module talks to emulated receivers, never to the ones plugged in.
-vi.mock("node-hid", () => import("./test-support/fake-node-hid"));
+vi.mock("node-hid", () => import("../test-support/fake-node-hid"));
 // The real logger writes to a logs/ folder.
-vi.mock("./logging", () => import("./test-support/fake-logging"));
+vi.mock("../logging", () => import("../test-support/fake-logging"));
 
 beforeEach(() => {
   connect();

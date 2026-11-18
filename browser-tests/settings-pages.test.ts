@@ -19,8 +19,8 @@ import { FakeStreamDeck, type StreamDeckMessage } from "./support/fake-stream-de
 // which the actions don't need to read their settings.
 vi.mock("@elgato/streamdeck", () => import("../src/test-support/fake-stream-deck"));
 vi.mock("../src/logging", () => import("../src/test-support/fake-logging"));
-vi.mock("../src/battery", () => ({ readBattery: vi.fn() }));
-vi.mock("../src/host", () => ({ switchHost: vi.fn() }));
+vi.mock("../src/mouse/battery", () => ({ readBattery: vi.fn() }));
+vi.mock("../src/mouse/host", () => ({ switchHost: vi.fn() }));
 
 const pluginDir = path.resolve("com.daczarne.mx3s.sdPlugin");
 const manifest = JSON.parse(readFileSync(path.join(pluginDir, "manifest.json"), "utf8")) as {

@@ -1,10 +1,10 @@
 /**
- * Reads the MX Master 3S's battery, through its UNIFIED_BATTERY feature, on the mouse reached by `mouse.ts`: how full
- * it is, the level the mouse puts that at, and whether it's charging. The mouse answers only while it's on this
+ * Reads the MX Master 3S's battery, through its UNIFIED_BATTERY feature, on the mouse reached by `connection.ts`: how
+ * full it is, the level the mouse puts that at, and whether it's charging. The mouse answers only while it's on this
  * computer's channel, and a request wakes it when it's at rest.
  */
-import { logger as pluginLogger } from "./logging";
-import { callFeature, type Mouse, reachMouse, type Unreached } from "./mouse";
+import { logger as pluginLogger } from "../logging";
+import { callFeature, type MouseConnection, reachMouse, type Unreached } from "./connection";
 
 const logger = pluginLogger.createScope("Battery");
 
@@ -47,7 +47,7 @@ export function readBattery(): Promise<BatteryResult> {
 }
 
 /** Asks the mouse reached for its battery's status: getStatus, which answers its percentage, level and charging. */
-async function readStatus(mouse: Mouse): Promise<BatteryResult> {
+async function readStatus(mouse: MouseConnection): Promise<BatteryResult> {
   const reply = await callFeature(mouse, GET_STATUS);
   const [percentage = 0, levelBit = 0, charging = 0] = reply.slice(4, 7);
   const level = LEVELS.find(([bit]) => bit === levelBit)?.[1];

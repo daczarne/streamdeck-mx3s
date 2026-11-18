@@ -9,7 +9,7 @@ import {
 } from "@daczarne/streamdeck-icons";
 import { describe, expect, it } from "vitest";
 
-import type { Battery } from "../battery";
+import type { Battery } from "../mouse/battery";
 import {
   batteryImage,
   batterySvg,
