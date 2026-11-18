@@ -1,5 +1,4 @@
 hidpp
-litra
 Logi
 REPROG
 Solaar

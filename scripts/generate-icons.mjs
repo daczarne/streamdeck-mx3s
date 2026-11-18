@@ -18,8 +18,8 @@ const MOUSE_SPAN = MOUSE.bottom - MOUSE.top;
 /**
  * How much of each icon's height the mouse covers. In the category icon, as much as in the MX Master 3S icon pack's
  * own icon, as `scripts/packs/mx3s.mjs` of `@daczarne/streamdeck-icons` sizes it, and about as much in the action's
- * icon in the same list. In the marketplace icon, less, to leave a margin inside its tile, about as much as the lamp
- * leaves in the Litra plugin's. On the key, less again, so that the title, which Stream Deck draws over the image at
+ * icon in the same list. In the marketplace icon, less, to leave a margin of about 15% of its side inside its tile.
+ * On the key, less again, so that the title, which Stream Deck draws over the image at
  * the bottom, clears the mouse centered above it.
  */
 const ICON_SPANS = { category: 0.86, action: 0.9, marketplace: 0.7, key: 0.44 };
@@ -34,7 +34,7 @@ const BATTERY_SPAN = BATTERY.right + BATTERY.terminal.width - BATTERY.left;
  */
 const BATTERY_SPANS = { action: 0.9, key: 0.6 };
 
-/** The corner radius of the marketplace icon's tile, as a share of its side, as the Litra plugin's has. */
+/** The corner radius of the marketplace icon's tile, as a share of its side. */
 const TILE_RADIUS = 0.18;
 
 /**

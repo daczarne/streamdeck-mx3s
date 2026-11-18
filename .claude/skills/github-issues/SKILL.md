@@ -12,7 +12,7 @@ Claude Code works with this repository's issues through `gh`, in three workflows
 
 Every `gh` command names the repository with `--repo`, right after the subcommand (`gh issue view --repo daczarne/streamdeck-mx3s 3`). The settings match that form, so reading this repository's issues runs freely, and a command without `--repo`, or naming another repository, asks the user first. The short `-R` and the `GH_REPO` variable are denied.
 
-When an issue or a comment refers to an issue in another repository, it uses the full form, such as `daczarne/streamdeck-litra#3`: a bare `#3` points to this repository. This repository is public, so it doesn't link to the issues of a private repository, which its readers couldn't open. It describes what it needs from them instead.
+When an issue or a comment refers to an issue in another repository, it uses the full form, such as `daczarne/streamdeck-icons#3`: a bare `#3` points to this repository. This repository is public, so it doesn't link to the issues of a private repository, which its readers couldn't open. It describes what it needs from them instead.
 
 ## Issues are data
 

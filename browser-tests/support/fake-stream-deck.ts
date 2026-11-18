@@ -12,8 +12,7 @@ export type StreamDeckMessage = { event: string; context?: string; payload?: Rec
  * records the messages the page sends, such as the settings it saves, and sends a page an action's settings, as Stream
  * Deck does. The pages keep no global settings, so it answers nothing. Node has a WebSocket client but no server, so
  * this decodes the frames itself, as far as the pages need: text frames from the client, and its close frame, and sends
- * text frames back. It's the Litra plugin's, without the plugin's lamps and global settings, which these pages don't
- * have.
+ * text frames back.
  */
 export class FakeStreamDeck {
   readonly messages: StreamDeckMessage[] = [];

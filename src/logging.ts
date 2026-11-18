@@ -16,8 +16,8 @@ export type RotatingFileTargetOptions = {
 
 /**
  * Writes log entries to a file that is kept across restarts, and rotated only once it's full, like Python's
- * RotatingFileHandler, as the Litra plugin's does (daczarne/streamdeck-litra#41). The SDK's own file target starts a new
- * file every time the plugin starts, so a few restarts while chasing a bug would push out the run that showed it.
+ * RotatingFileHandler. The SDK's own file target starts a new file every time the plugin starts, so a few restarts
+ * while chasing a bug would push out the run that showed it.
  *
  * When the next entry would take the current file past its size, the file becomes `.1`, every older file moves up one,
  * and the one past the last kept is deleted. A write that fails is dropped, so logging never fails a switch.

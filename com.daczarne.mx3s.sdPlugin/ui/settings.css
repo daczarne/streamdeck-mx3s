@@ -42,7 +42,7 @@
   font-size: 9pt;
 }
 
-/* Each section's heading, across the page, with a line under it, as the Litra plugin's settings draw theirs.
+/* Each section's heading, across the page, with a line under it.
    Outside sdpi-components' rows, so in its font and text color, written out. */
 .section-heading {
   border-bottom: 1px solid #666;
