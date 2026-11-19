@@ -85,7 +85,13 @@ Developer mode stays on afterwards.
 
 ## Working on the plugin
 
-[The contributing guide][contributing] describes how changes are made. The developer guide, in `docs/developer_guide/`, holds [the style guide][style-guide], the conventions the linters don't enforce, [how a release is made][releases-doc], and [the checks that only the Deck and the mouse can prove][manual-testing], one document per area.
+[The contributing guide][contributing] describes how changes are made. The developer guide, in `docs/developer_guide/`, holds the rest:
+
+- [The architecture document][architecture]: how the plugin's parts fit together, and why they're built that way.
+- [The testing guide][testing]: how the tests are written.
+- [The style guide][style-guide]: the conventions the linters don't enforce.
+- [The release process][releases-doc]: how a release is made, from the version to publishing it.
+- [The manual checks][manual-testing]: what only the Deck and the mouse can prove, one document per area.
 
 Since the plugin is linked, a change takes effect as soon as it's built and the plugin restarts. A change to `manifest.json` takes effect once Stream Deck itself is quit and reopened: restarting the plugin isn't enough. Switching branches switches what the Deck runs, after the next build.
 
@@ -169,6 +175,7 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 
 [#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
 [#33]: https://github.com/daczarne/streamdeck-mx3s/issues/33
+[architecture]: docs/developer_guide/architecture.md
 [battery]: com.daczarne.mx3s.sdPlugin/imgs/actions/battery/icon@2x.png
 [bug-report]: https://github.com/daczarne/streamdeck-mx3s/issues/new?template=bug_report.yaml
 [check-ui]: scripts/check-ui.mjs
@@ -191,5 +198,6 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [stream-deck]: https://www.elgato.com/streamdeck
 [streamdeck-icons]: https://github.com/daczarne/streamdeck-icons
 [style-guide]: docs/developer_guide/style_guide.md
+[testing]: docs/developer_guide/testing.md
 [troubleshooting]: docs/user_guide/README.md#when-something-doesnt-work
 [user-guide]: docs/user_guide/README.md

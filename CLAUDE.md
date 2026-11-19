@@ -23,6 +23,8 @@ Its two actions are keys: Set Host sends the mouse to the host it's set to, and 
 
 - `docs/user_guide/README.md`: how the plugin is used, key by key, for its users. A change to what the Deck shows or does, or to a setting, updates it.
 - `docs/contributing.md`: how work is done here. Changes go through pull requests, features come with their tests and update the user guide, dependencies are pinned, unused code is removed, and a module goes in its layer. This file only adds what is specific to Claude.
+- `docs/developer_guide/architecture.md`: how the plugin's parts fit together, and why they're built that way, such as reaching the mouse only through receivers, finding it afresh for every operation, and running one operation at a time.
+- `docs/developer_guide/testing.md`: how the tests are written: what each kind covers, the fakes and the emulated receivers they stand on, and how a test is laid out.
 - `docs/developer_guide/style_guide.md`: the conventions the linters don't enforce (see [Style](#style)).
 - `docs/developer_guide/releases.md`: how a release is made, from the branch that raises the version to the published release, and where the version is written.
 - `docs/developer_guide/manual_testing/`: the checks that only the Deck and the mouse can prove, one document per area. Before asking for a check on the Deck, point to the matching document. When a feature needs new manual checks, add them there.

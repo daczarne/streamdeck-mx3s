@@ -33,9 +33,11 @@ Commit messages on a branch disappear in the squash. They stay short and accurat
 
 ## Features ship with tests
 
-Every new feature or enhancement comes with automated tests for it, in the same pull request. Otherwise the branch that adds the feature can also add its bugs, typically in edge cases nobody tested. The issue isn't done until the tests are in.
+Every new feature or enhancement comes with automated tests for it, in the same pull request. Otherwise the branch that adds the feature can also add its bugs, typically in edge cases nobody tested. The issue isn't done until the tests are in. [The testing guide][testing] describes how the tests are written.
 
 - A unit test covers one module, with the modules it builds on faked, or the mouse emulated for the code that talks to it: its logic and its edge cases, such as invalid settings, logs and each kind of failure. An integration test covers what crosses modules: that what one module reports or sends reaches the next as that one expects.
+- An abstract class is tested on its own, through a subclass its test declares, a fake named after the class it extends, with fakes for what an implementation gives it, so what the tests check holds for every implementation, and they import none of them. Each implementation has a test file of its own, next to it, for what's its own, with at least a contract test that creates it and checks its defaults. The plugin has no abstract class yet, so this applies from the first one.
+- What a test puts in place of the real thing is named for what it stands in for. A fake stands in for software: a module the code under test builds on, such as the SDK (`fake-stream-deck.ts`), the logger (`fake-logging.ts`) or `node-hid` (`fake-node-hid.ts`), Stream Deck sending a key's events (`FakeDeck`), or an implementation of an abstract class. It does what the tests need of it, and nothing more. An emulated device stands in for hardware: it behaves as the probes measured the real one to (`scripts/probes/`), such as a Bolt receiver that answers HID++ requests for the mouse it holds (`emulated-receiver.ts`). What several tests share lives in `src/test-support/`, and what one test needs alone, in that test.
 - A browser test covers a settings page, loaded in a headless Chrome under its Content-Security-Policy, with a fake for Stream Deck: what the policy refuses, the controls the page shows and the settings it sends, and its script's logic, such as the Battery page's Reset buttons.
 - What can't be automated, such as Stream Deck's own behavior or what the mouse does, is checked by hand on the Deck. Those checks are written down in `docs/developer_guide/manual_testing/`, one document per area, with when to run them and what each one should show, so that anyone can repeat them without remembering how. A feature that needs new manual checks adds them there, in the same pull request.
 - A bug the tests find, which the branch doesn't fix, gets a test stating the intended behavior, marked as failing and linked to its own issue. When the bug is fixed, the test starts passing, and it becomes a normal test.
@@ -76,4 +78,5 @@ The MX Master 3S, connected through a Logi Bolt receiver, is the plugin's target
 
 [battery-checks]: developer_guide/manual_testing/battery.md
 [style-guide]: developer_guide/style_guide.md
+[testing]: developer_guide/testing.md
 [user-guide]: user_guide/README.md
