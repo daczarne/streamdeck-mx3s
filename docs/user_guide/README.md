@@ -66,7 +66,7 @@ A Set Host key shows Stream Deck's alert indicator when it can't send the mouse:
 - The key's host is past the mouse's.
 - A request to the receiver fails.
 
-A Battery key shows what its [Mouse not found](#mouse-not-found) section chooses whenever its read doesn't reach the mouse, for any of the same reasons.
+A Battery key shows what its [Mouse not found](#mouse-not-found) section chooses whenever its read doesn't reach the mouse: no receiver, none that reaches it, or a request that fails.
 
 If something else doesn't work, [a bug report][bug-report] with the plugin's log helps. The log tells each press of a key, each read of the battery, the receivers each one opens, and what came of it. The logs are in the plugin's folder, newest in `mx3s.log`:
 

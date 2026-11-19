@@ -21,9 +21,9 @@ Its two actions are keys: Set Host sends the mouse to the host it's set to, and 
 
 ## Read before changing things
 
-- `docs/user_guide/user_guide.md`: how the plugin is used, key by key, for its users. A change to what the Deck shows or does, or to a setting, updates it.
+- `docs/user_guide/README.md`: how the plugin is used, key by key, for its users. A change to what the Deck shows or does, or to a setting, updates it.
 - `docs/contributing.md`: how work is done here. Changes go through pull requests, features come with their tests and update the user guide, dependencies are pinned, unused code is removed, and a module goes in its layer. This file only adds what is specific to Claude.
-- `docs/style_guide.md`: the conventions the linters don't enforce (see [Style](#style)).
+- `docs/developer_guide/style_guide.md`: the conventions the linters don't enforce (see [Style](#style)).
 - `docs/developer_guide/releases.md`: how a release is made, from the branch that raises the version to the published release, and where the version is written.
 - `docs/developer_guide/manual_testing/`: the checks that only the Deck and the mouse can prove, one document per area. Before asking for a check on the Deck, point to the matching document. When a feature needs new manual checks, add them there.
 - [Elgato's documentation of the Stream Deck SDK][sdk]: what the SDK offers. Read it before designing how an action behaves on the Deck. What the plugin relies on beyond it, found on the Deck, is stated where the code relies on it, and holds for the version the plugin is checked on (see [Project](#project)), unless the comment names another.
@@ -127,7 +127,7 @@ What shapes the design:
 
 ## Style
 
-`docs/style_guide.md`, `.editorconfig`, `biome.json`, the Markdown lint configuration and CSpell (with the dictionaries in `.cspell/`) are the authority on style.
+`docs/developer_guide/style_guide.md`, `.editorconfig`, `biome.json`, the Markdown lint configuration and CSpell (with the dictionaries in `.cspell/`) are the authority on style.
 
 [#3]: https://github.com/daczarne/streamdeck-mx3s/issues/3
 [sdk]: https://docs.elgato.com/streamdeck

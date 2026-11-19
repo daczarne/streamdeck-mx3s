@@ -75,5 +75,5 @@ The MX Master 3S, connected through a Logi Bolt receiver, is the plugin's target
 - When asked for a command, Claude replies with the command and doesn't run it. Steps that change what the Deck runs or shows, like restarting the plugin, and steps that move the mouse to another host, are the user's to run, while looking at the hardware.
 
 [battery-checks]: developer_guide/manual_testing/battery.md
-[style-guide]: style_guide.md
-[user-guide]: user_guide/user_guide.md
+[style-guide]: developer_guide/style_guide.md
+[user-guide]: user_guide/README.md

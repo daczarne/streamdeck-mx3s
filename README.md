@@ -85,7 +85,7 @@ Developer mode stays on afterwards.
 
 ## Working on the plugin
 
-[The contributing guide][contributing] describes how changes are made, and [the style guide][style-guide] the conventions the linters don't enforce. The developer guide, in `docs/developer_guide/`, describes [how a release is made][releases-doc], and [the checks that only the Deck and the mouse can prove][manual-testing], one document per area.
+[The contributing guide][contributing] describes how changes are made. The developer guide, in `docs/developer_guide/`, holds [the style guide][style-guide], the conventions the linters don't enforce, [how a release is made][releases-doc], and [the checks that only the Deck and the mouse can prove][manual-testing], one document per area.
 
 Since the plugin is linked, a change takes effect as soon as it's built and the plugin restarts. A change to `manifest.json` takes effect once Stream Deck itself is quit and reopened: restarting the plugin isn't enough. Switching branches switches what the Deck runs, after the next build.
 
@@ -190,6 +190,6 @@ The plugin is MIT licensed: see [`LICENSE`][license].
 [solaar]: https://github.com/pwr-Solaar/Solaar
 [stream-deck]: https://www.elgato.com/streamdeck
 [streamdeck-icons]: https://github.com/daczarne/streamdeck-icons
-[style-guide]: docs/style_guide.md
-[troubleshooting]: docs/user_guide/user_guide.md#when-something-doesnt-work
-[user-guide]: docs/user_guide/user_guide.md
+[style-guide]: docs/developer_guide/style_guide.md
+[troubleshooting]: docs/user_guide/README.md#when-something-doesnt-work
+[user-guide]: docs/user_guide/README.md
