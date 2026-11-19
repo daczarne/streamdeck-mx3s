@@ -63,7 +63,7 @@ Each action is a class that extends the SDK's `SingletonAction`, registered with
 
 ### The Battery key's image
 
-`src/controls/battery-image.ts` turns what a key shows into its image. `styleOf` turns a key's settings into a `Style`: its background, its mouse, its battery, its bolt, the levels the percentage is colored by, and what it shows once the mouse isn't found. `batteryImage` draws a reading in a style, as an SVG data URL. It holds no state: the same reading and style always draw the same image, which is what lets its tests check the image an action sets by drawing the expected one.
+`src/controls/battery-image.ts` turns what a key shows into its image. `styleOf` turns a key's settings into a `Style`: its background, its mouse, its battery, its bolt, the levels the percentage is colored by, and what it shows once the mouse isn't found. `batteryImage` draws a reading in a style, as an SVG data URL. It holds no state: the same reading and style always draw the same image, which is what lets the actions' tests check the image a key is set to, by drawing the one they expect.
 
 ### The settings schemas
 

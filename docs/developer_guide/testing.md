@@ -37,7 +37,7 @@ vi.mock("../logging", () => import("../test-support/fake-logging"));
 
 ### Fakes
 
-- `fake-stream-deck.ts` stands in for `@elgato/streamdeck`, which opens a connection to Stream Deck and creates a `logs/` folder on import. It gives the actions the SDK's base class and decorator, which sets the action's id from the manifest, as the SDK's does, fake keys, which record what the plugin tells them to show, and an entry point that connects to nothing and, like the SDK, refuses an action whose id `manifest.json` doesn't list.
+- `fake-stream-deck.ts` stands in for `@elgato/streamdeck`, which opens a connection to Stream Deck and creates a `logs/` folder on import. It gives the actions the SDK's base class, and its decorator, which gives the class the id it's registered under, as the SDK's does, fake keys, which record what the plugin tells them to show, and an entry point that connects to nothing and, like the SDK, refuses an action whose id `manifest.json` doesn't list.
 - `fake-deck.ts` holds `FakeDeck`, which stands in for Stream Deck sending a key's events: it places keys for the actions it's given, sends each event to the action the key belongs to, by its id in the manifest, with the settings the key has saved, and waits for what the event sets off.
 - `fake-logging.ts` stands in for `src/logging.ts`, which writes to a `logs/` folder. Every scope logs to the same mocks, so a test checks what was logged without knowing which scope logged it.
 - `fake-node-hid.ts` stands in for `node-hid`, which loads its native binary on import and would reach the receivers plugged into the computer. It lists and opens the emulated receivers a test plugs in with `connect`, records every call made on them, which `hidEvents` returns, and can fail to list the devices (`failListingDevices`).
@@ -87,6 +87,7 @@ They check each page under its Content-Security-Policy, which refuses anything r
 - A test's name says what the code does, as a sentence a reader understands without the code, such as "reports the mouse unreachable when no receiver reaches it".
 - Each test sets up what it needs, and checks the outcome a user or the next module sees: what a key shows, what was written to a receiver, what was returned and logged. It doesn't check how the code got there.
 - An element of an array is read with `at` from `src/test-support/at.ts`, which fails the test when it's missing, rather than with `!`.
+- A bug the tests find, which the branch doesn't fix, gets an `it.fails` test stating the intended behavior, linked to its issue. Once the bug is fixed, Vitest reports it as a failure, and it becomes a normal test.
 - Helpers have doc comments, like every function (see [the style guide][style-guide]).
 
 [architecture]: architecture.md
