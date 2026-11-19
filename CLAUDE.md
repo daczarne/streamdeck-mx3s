@@ -21,10 +21,11 @@ Its two actions are keys: Set Host sends the mouse to the host it's set to, and 
 
 ## Read before changing things
 
-- `docs/contributing.md`: how work is done here. Changes go through pull requests, features come with their tests, dependencies are pinned, unused code is removed, and a module goes in its layer. This file only adds what is specific to Claude.
+- `docs/user_guide/user_guide.md`: how the plugin is used, key by key, for its users. A change to what the Deck shows or does, or to a setting, updates it.
+- `docs/contributing.md`: how work is done here. Changes go through pull requests, features come with their tests and update the user guide, dependencies are pinned, unused code is removed, and a module goes in its layer. This file only adds what is specific to Claude.
 - `docs/style_guide.md`: the conventions the linters don't enforce (see [Style](#style)).
-- `docs/releases.md`: how a release is made, from the branch that raises the version to the published release, and where the version is written.
-- `docs/manual_testing/`: the checks that only the Deck and the mouse can prove, one document per area. Before asking for a check on the Deck, point to the matching document. When a feature needs new manual checks, add them there.
+- `docs/developer_guide/releases.md`: how a release is made, from the branch that raises the version to the published release, and where the version is written.
+- `docs/developer_guide/manual_testing/`: the checks that only the Deck and the mouse can prove, one document per area. Before asking for a check on the Deck, point to the matching document. When a feature needs new manual checks, add them there.
 - [Elgato's documentation of the Stream Deck SDK][sdk]: what the SDK offers. Read it before designing how an action behaves on the Deck. What the plugin relies on beyond it, found on the Deck, is stated where the code relies on it, and holds for the version the plugin is checked on (see [Project](#project)), unless the comment names another.
 
 ## Layout
@@ -120,7 +121,7 @@ What shapes the design:
 
 - Create branches with `git switch -c`.
 - Commit messages explain the why and end with the `Co-Authored-By` trailer for Claude. Commit only when asked.
-- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`, and the browser tests in a job of their own, beside the others, since they need no build. On `main`, once every check has passed, its last job drafts a release when the version is new (see `docs/releases.md`). Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the unit tests and then the browser tests, and `/ci` runs both.
+- `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`, and the browser tests in a job of their own, beside the others, since they need no build. On `main`, once every check has passed, its last job drafts a release when the version is new (see `docs/developer_guide/releases.md`). Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the unit tests and then the browser tests, and `/ci` runs both.
 - Write the pull request title and description with the `pr-description` skill.
 - Draft issues with the `github-issues` skill, and post them only when asked.
 

@@ -4,6 +4,7 @@
 - [Small pull requests](#small-pull-requests)
 - [Commit messages and pull request text](#commit-messages-and-pull-request-text)
 - [Features ship with tests](#features-ship-with-tests)
+- [Features update the user guide](#features-update-the-user-guide)
 - [Dependencies](#dependencies)
 - [Unused code](#unused-code)
 - [A module goes in its layer](#a-module-goes-in-its-layer)
@@ -36,8 +37,12 @@ Every new feature or enhancement comes with automated tests for it, in the same 
 
 - A unit test covers one module, with the modules it builds on faked, or the mouse emulated for the code that talks to it: its logic and its edge cases, such as invalid settings, logs and each kind of failure. An integration test covers what crosses modules: that what one module reports or sends reaches the next as that one expects.
 - A browser test covers a settings page, loaded in a headless Chrome under its Content-Security-Policy, with a fake for Stream Deck: what the policy refuses, the controls the page shows and the settings it sends, and its script's logic, such as the Battery page's Reset buttons.
-- What can't be automated, such as Stream Deck's own behavior or what the mouse does, is checked by hand on the Deck. Those checks are written down in `docs/manual_testing/`, one document per area, with when to run them and what each one should show, so that anyone can repeat them without remembering how. A feature that needs new manual checks adds them there, in the same pull request.
+- What can't be automated, such as Stream Deck's own behavior or what the mouse does, is checked by hand on the Deck. Those checks are written down in `docs/developer_guide/manual_testing/`, one document per area, with when to run them and what each one should show, so that anyone can repeat them without remembering how. A feature that needs new manual checks adds them there, in the same pull request.
 - A bug the tests find, which the branch doesn't fix, gets a test stating the intended behavior, marked as failing and linked to its own issue. When the bug is fixed, the test starts passing, and it becomes a normal test.
+
+## Features update the user guide
+
+[The user guide][user-guide] is where users learn how the plugin works, key by key. A feature that changes what the Deck shows or does, or adds a setting, updates it in the same pull request. The README stays an overview: what the plugin is, its actions, what it runs on and how to install it, then how to build it and work on it.
 
 ## Dependencies
 
@@ -69,5 +74,6 @@ The MX Master 3S, connected through a Logi Bolt receiver, is the plugin's target
 
 - When asked for a command, Claude replies with the command and doesn't run it. Steps that change what the Deck runs or shows, like restarting the plugin, and steps that move the mouse to another host, are the user's to run, while looking at the hardware.
 
-[battery-checks]: manual_testing/battery.md
+[battery-checks]: developer_guide/manual_testing/battery.md
 [style-guide]: style_guide.md
+[user-guide]: user_guide/user_guide.md

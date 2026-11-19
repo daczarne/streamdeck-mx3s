@@ -32,7 +32,7 @@ Download `com.daczarne.mx3s.streamDeckPlugin` from the release's page. Then open
 
 [#33]: https://github.com/daczarne/streamdeck-mx3s/issues/33
 [battery]: battery.md
-[probes]: ../../scripts/probes/README.md
+[probes]: ../../../scripts/probes/README.md
 [releases]: ../releases.md
 [set-host]: set_host.md
 [settings-pages]: settings_pages.md
