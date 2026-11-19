@@ -39,4 +39,4 @@ tail -n 5 com.daczarne.mx3s.sdPlugin/logs/mx3s.log
 6. **A key alerts with no receiver.** Unplug this computer's receiver, and press any key: it shows an alert, and the log ends with `No Logi Bolt receiver found`. Plug the receiver back in, and press the key of the host the mouse is on: it shows a check mark again.
 7. **The log carries on across restarts.** Restart the plugin and press a key: `mx3s.log` holds the earlier lines, then `Plugin started` and the new ones.
 
-[probes]: ../../scripts/probes/README.md
+[probes]: ../../../scripts/probes/README.md

@@ -54,7 +54,7 @@ Publishing the draft is manual, once its notes are read: the pull requests GitHu
 
 Development runs linked from the repository, where the plugin also finds the repository's `node_modules`, so a file missing from the package only shows once the plugin is installed. Each release is therefore installed from its page once it's published, on macOS and on Windows, and checked there as its users run it, following [the release checks][release-checks]. What the checks find broken is fixed through a pull request, and ships in a patch release.
 
-[packaging]: ../README.md#packaging
+[packaging]: ../../README.md#packaging
 [release-checks]: manual_testing/releases.md
-[security]: ../SECURITY.md
+[security]: ../../SECURITY.md
 [semver]: https://semver.org
