@@ -125,6 +125,7 @@ What shapes the design:
 - Commit messages explain the why and end with the `Co-Authored-By` trailer for Claude. Commit only when asked.
 - `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`, and the browser tests in a job of their own, beside the others, since they need no build. On `main`, once every check has passed, its last job drafts a release when the version is new (see `docs/developer_guide/releases.md`). Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the unit tests and then the browser tests, and `/ci` runs both.
 - Write the pull request title and description with the `pr-description` skill.
+- Check the dependencies with the `dependencies-check` skill, which proposes the upgrades and changes nothing. Each upgrade is then its own pull request.
 - Draft issues with the `github-issues` skill, and post them only when asked.
 
 ## Style
