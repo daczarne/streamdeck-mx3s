@@ -88,7 +88,7 @@ Supply-chain risk is a hard requirement here:
 - No remote code. The settings pages load `sdpi-components` from `ui/vendor/`, pinned by hash in `scripts/check-ui.mjs`. The "Third-party code" section of `README.md` describes how to update it. Never install `sdpi-components` from npm: that package belongs to an unrelated maintainer.
 - Each settings page declares a Content-Security-Policy, which `scripts/check-ui.mjs` also holds and checks. It allows scripts only from the plugin folder, styles only from the plugin folder and the one `<style>` element sdpi-components adds, by the hash of its text, which the check computes from the vendored file, and connections only to Stream Deck's WebSocket on `localhost`, so inline scripts and styles are blocked: page logic goes in a `.js` file in `ui/`, and styles in `ui/settings.css`, which every page links (#33). The "Settings pages" section of `README.md` explains each directive. A change to the policy updates every page, the check and that section.
 - Install with `--ignore-scripts`, pin versions, and prefer local copies with recorded hashes. Flag any new dependency, remote resource or broad OS permission, and offer a narrower alternative.
-- Node and npm are pinned in `devEngines`, npm at the version that ships with that Node, so neither is installed on its own. npm packages and GitHub Actions are pinned to exact versions, and `@daczarne/streamdeck-icons` to a commit. Each upgrade is its own change: see the "Dependencies" section of `docs/contributing.md`.
+- Node and npm are pinned in `devEngines`, npm at the version that ships with that Node, so neither is installed on its own. npm packages and GitHub Actions are pinned to exact versions, and `@daczarne/streamdeck-icons` to a commit, kept at the newest of its `main`. Each upgrade is its own change: see the "Dependencies" section of `docs/contributing.md`.
 - No macOS permission is asked for on behalf of the Stream Deck app (see [How the mouse is reached](#how-the-mouse-is-reached)).
 
 ## How the mouse is reached
@@ -125,6 +125,7 @@ What shapes the design:
 - Commit messages explain the why and end with the `Co-Authored-By` trailer for Claude. Commit only when asked.
 - `.github/workflows/main.yaml` labels pull requests from `.github/labeler.yaml`, and runs Markdown lint, CSpell, the type check, Biome, a regeneration of the icons that must change nothing, the unit tests and `npm run validate` on every pull request and on `main`, and the browser tests in a job of their own, beside the others, since they need no build. On `main`, once every check has passed, its last job drafts a release when the version is new (see `docs/developer_guide/releases.md`). Locally, the same checks run in two parts: `/lint` runs the linters (everything but the tests), `/test` runs the unit tests and then the browser tests, and `/ci` runs both.
 - Write the pull request title and description with the `pr-description` skill.
+- Check the dependencies with the `dependencies-check` skill, which proposes the upgrades and changes nothing. Each upgrade is then its own pull request.
 - Draft issues with the `github-issues` skill, and post them only when asked.
 
 ## Style
