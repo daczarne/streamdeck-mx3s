@@ -67,6 +67,6 @@
     "@daczarne/streamdeck-icons": "github:daczarne/streamdeck-icons#09449e8677d7435897cfb5e4ca515e107ce65cc2",
     "@elgato/streamdeck": "3.0.4",
     "@elgato/utils": "0.6.2",
-    "node-hid": "3.3.0"
+    "node-hid": "3.4.0"
   }
 }
