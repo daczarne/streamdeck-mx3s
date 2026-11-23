@@ -116,6 +116,9 @@ jobs:
       - name: Lint and format check 🧪
         id: lint_code
         run: npm run lint
+      - name: Check the doc comments 🧪
+        id: check_docs
+        run: npm run check:docs
       - name: Check the icons match their code 🧪
         id: check_icons
         # Regenerates the plugin's icons, and fails if that changes anything in imgs/: the committed files must be what

@@ -105,6 +105,7 @@ npm run format            # Biome: apply the formatting and the import order
 npm test                  # run the unit tests
 npm run test:browser      # run the browser tests, which need Chrome
 npm run check:ui          # settings pages: no remote resources or inline styles, CSP and stylesheet on every page, vendored file matches its hash
+npm run check:docs        # a doc comment on every function, class, method and constructor, with typed @param and @returns in JavaScript
 npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```

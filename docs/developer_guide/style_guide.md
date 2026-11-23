@@ -56,6 +56,8 @@ A doc comment says what the declaration does or why it exists, and follows the r
 - In JavaScript (the `.mjs` scripts and `ui/*.js`), every parameter has a `@param` and every function a `@returns`, with its type.
 - A doc comment goes above a class's decorator, not between the decorator and the class: TypeScript only attaches it there.
 
+`npm run check:docs` checks that each of these declarations has a doc comment where TypeScript attaches it, and, in JavaScript, that it has a typed `@param` for every parameter and a typed `@returns`, except on a constructor or a setter. What a doc comment says is left to review.
+
 ### Spelling
 
 Every new word must pass CSpell. Real terms go into the matching dictionary under `.cspell/`, in alphabetical order.

@@ -48,6 +48,7 @@ tools:
           - .npmrc
           - .vscode/**
           - biome.json
+          - scripts/check-docs.mjs
           - tsconfig.json
           - tsconfig.scripts.json
 workflows:
