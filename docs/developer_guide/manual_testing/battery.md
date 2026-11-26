@@ -22,6 +22,8 @@ npm run build
 npx streamdeck restart com.daczarne.mx3s
 ```
 
+In VS Code, the `Build and restart` task runs both.
+
 To read the end of the log:
 
 ```shell

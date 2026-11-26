@@ -1,6 +1,6 @@
 ---
 description: Run every linter, fix formatting findings and report the rest
-allowed-tools: Bash(markdownlint-cli2 *), Bash(cspell lint *), Bash(git grep *), Bash(git status *), Bash(npm run lint), Bash(npm run format), Bash(npm run icons), Bash(npm run typecheck), Bash(npm run validate)
+allowed-tools: Bash(markdownlint-cli2 *), Bash(cspell lint *), Bash(git grep *), Bash(git status *), Bash(npm run lint), Bash(npm run check:docs), Bash(npm run format), Bash(npm run icons), Bash(npm run typecheck), Bash(npm run validate)
 ---
 
 # Lint
@@ -11,6 +11,7 @@ Run the linters from CI, from the repository root, in this order: those of the `
 1. `cspell lint --config ".cspell.json" --dot --no-progress .`
 1. `npm run typecheck`, which checks the TypeScript and the build and check scripts.
 1. `npm run lint`, which runs Biome on the TypeScript, the JavaScript and the settings pages' stylesheet: its lint rules, formatting and import order.
+1. `npm run check:docs`, which checks that every function, class, method and constructor has a doc comment, that in JavaScript it has a typed `@param` for every parameter and a typed `@returns`, or a `@type` that types the whole function, and that in TypeScript its tags give no type.
 1. `npm run icons`, then `git status --short -- com.daczarne.mx3s.sdPlugin/imgs`: regenerating the icons must change nothing. A change means the committed icons aren't what `scripts/generate-icons.mjs` draws.
 1. `npm run validate`, which runs `check:ui`, the build and `streamdeck validate`.
 
@@ -21,6 +22,7 @@ Formatting findings are fixed directly, without asking. Everything else is repor
 - markdownlint, cspell and the heading check only cover formatting and spelling. Fix everything they report.
 - Biome's formatting and import order findings are fixed with `npm run format`. Its lint rules report problems in the code: report them.
 - Icons that change when regenerated are reported, and left as regenerated: whether the script or the committed icons are right is a decision.
+- A missing doc comment or tag that `npm run check:docs` reports is reported: what it says needs the code's intent, so it isn't written on its own.
 - The type check and `npm run validate` report errors in the code, the settings pages or the manifest. Report them.
 
 Rules for the fixes:

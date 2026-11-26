@@ -48,13 +48,15 @@ Comments explain intent and stay general. They don't repeat specifics the code a
 
 ### Doc comments
 
-Every function, class, method and constructor declared at the top of a file, or in a class there, has a doc comment (`/** … */`): in the plugin, its tests, the scripts and the settings pages' scripts. A closure inside a function is read with the function around it and needs none.
+Every function, class, method and constructor declared at the top of a file, in a class there, or in a function that wraps the file and runs at once, has a doc comment (`/** … */`): in the plugin, its tests, the scripts and the settings pages' scripts. A closure inside a function is read with the function around it and needs none.
 
 A doc comment says what the declaration does or why it exists, and follows the rules for comments above: it doesn't repeat what the code states.
 
 - In TypeScript, the signature gives the types. `@param` and `@returns` appear only where a name doesn't explain itself, and never with a type.
-- In JavaScript (the `.mjs` scripts and `ui/*.js`), every parameter has a `@param` and every function a `@returns`, with its type.
+- In JavaScript (the `.mjs` scripts and `ui/*.js`), every parameter has a `@param` and every function but a constructor or a setter a `@returns`, with its type, unless a `@type` gives the whole function a named function type.
 - A doc comment goes above a class's decorator, not between the decorator and the class: TypeScript only attaches it there.
+
+`npm run check:docs` checks, over the TypeScript and JavaScript files Biome covers, that each of these declarations has a doc comment where TypeScript attaches it, and that its tags follow the rules above. What a doc comment says is left to review.
 
 ### Spelling
 

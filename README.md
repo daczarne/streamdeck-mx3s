@@ -105,9 +105,12 @@ npm run format            # Biome: apply the formatting and the import order
 npm test                  # run the unit tests
 npm run test:browser      # run the browser tests, which need Chrome
 npm run check:ui          # settings pages: no remote resources or inline styles, CSP and stylesheet on every page, vendored file matches its hash
+npm run check:docs        # a doc comment on every function, class, method and constructor, with typed @param and @returns in JavaScript
 npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```
+
+In VS Code, the `Build and restart` task builds once and restarts the plugin. It's the default build task, so **Tasks: Run Build Task** (⇧⌘B) starts it. The `Lint`, `Test` and `CI` tasks run the same checks as CI, one after the other, and stop at the first that fails. `Test` is the default test task. The tasks run through `sh`, so they work on macOS and Linux, not Windows.
 
 The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each press of a key, each read of the battery, the ones every 10 minutes included, and what came of them. It carries on across restarts, and is rotated once it reaches 1 MB, keeping four older files.
 

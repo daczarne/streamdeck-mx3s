@@ -1,0 +1,131 @@
+{
+  "version": "2.0.0",
+  // The tasks run through sh, which Windows doesn't have, so they work on macOS (and Linux) only. That's where the
+  // plugin is developed, linked into Stream Deck: on Windows, only installed releases are checked.
+  //
+  // Every task's terminal closes when the task exits, going back to the terminal that was open before. run-task.sh
+  // keeps it open on failure, until Enter is pressed.
+  "presentation": {
+    "close": true,
+  },
+  "tasks": [
+    // The default build task, so "Tasks: Run Build Task" runs it. The linked plugin runs the new build once restarted.
+    {
+      "label": "Build and restart",
+      "detail": "Build the plugin, then restart it on the Deck",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run build && npx streamdeck restart com.daczarne.mx3s'",
+      "group": {
+        "kind": "build",
+        "isDefault": true,
+      },
+      "problemMatcher": [ ],
+    },
+    // The compound tasks run their checks one after the other, and stop at the first that fails. CI runs the Markdown
+    // lint, the spell check, the code checks and the browser tests as separate jobs, so it reports a failure in each.
+    {
+      "label": "CI",
+      "detail": "Run every check from CI: the linters, then the tests",
+      "dependsOn": [
+        "Lint",
+        "Test",
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Lint",
+      "detail": "Run every linter",
+      "dependsOn": [
+        "Lint: Markdown",
+        "Lint: spelling",
+        "Lint: types",
+        "Lint: code",
+        "Lint: doc comments",
+        "Lint: icons",
+        "Lint: validate",
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [ ],
+    },
+    // The Markdown lint and CSpell come from the machine, not the lockfile, as CI runs them through its Actions.
+    // They're kept at the versions those Actions bundle, or local checks and CI's can disagree (see
+    // docs/contributing.md).
+    {
+      "label": "Lint: Markdown",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'markdownlint-cli2 --config .markdownlint.yaml .'",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Lint: spelling",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'cspell lint --config .cspell.json --dot --no-progress .'",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Lint: code",
+      "detail": "Biome: lint, formatting and import order",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run lint'",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Lint: doc comments",
+      "detail": "Every function, class, method and constructor has a doc comment",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run check:docs'",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Lint: icons",
+      "detail": "Regenerate the icons, which must change nothing in imgs/",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run icons && git status --porcelain -- com.daczarne.mx3s.sdPlugin/imgs && test -z \"$(git status --porcelain -- com.daczarne.mx3s.sdPlugin/imgs)\"'",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Lint: types",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run typecheck'",
+      "problemMatcher": [
+        "$tsc",
+      ],
+    },
+    {
+      "label": "Lint: validate",
+      "detail": "check:ui, build and streamdeck validate",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run validate'",
+      "problemMatcher": [ ],
+    },
+    // The default test task, so "Tasks: Run Test Task" runs it.
+    {
+      "label": "Test",
+      "detail": "Run the unit and integration tests, then the browser tests",
+      "dependsOn": [
+        "Test: unit and integration",
+        "Test: browser",
+      ],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "test",
+        "isDefault": true,
+      },
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Test: unit and integration",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm test'",
+      "problemMatcher": [ ],
+    },
+    {
+      "label": "Test: browser",
+      "detail": "Drive the settings pages in a headless Chrome",
+      "type": "shell",
+      "command": "sh .vscode/run-task.sh 'npm run test:browser'",
+      "problemMatcher": [ ],
+    },
+  ],
+}

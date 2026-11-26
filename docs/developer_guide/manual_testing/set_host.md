@@ -21,6 +21,8 @@ npm run build
 npx streamdeck restart com.daczarne.mx3s
 ```
 
+In VS Code, the `Build and restart` task runs both.
+
 When the branch changes `manifest.json`, quit Stream Deck and open it again instead of restarting the plugin.
 
 The key of another host sends the mouse away from this computer, which can't call it back: bring it back with the mouse's Easy-Switch button, pressed until it's on this computer's channel again. To read the end of the log:
