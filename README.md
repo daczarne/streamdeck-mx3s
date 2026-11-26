@@ -110,6 +110,8 @@ npm run validate          # check:ui, build and streamdeck validate
 npm run icons             # regenerate the icons in imgs/ from scripts/generate-icons.mjs
 ```
 
+In VS Code, the `Build and restart` task builds once and restarts the plugin. It's the default build task, so **Tasks: Run Build Task** (⇧⌘B) starts it. The `Lint`, `Test` and `CI` tasks run the checks as CI does, and `Test` is the default test task.
+
 The plugin's log is `com.daczarne.mx3s.sdPlugin/logs/mx3s.log`, which tells each press of a key, each read of the battery, the ones every 10 minutes included, and what came of them. It carries on across restarts, and is rotated once it reaches 1 MB, keeping four older files.
 
 ## Packaging

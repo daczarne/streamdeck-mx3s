@@ -22,6 +22,8 @@ npm run build
 npx streamdeck restart com.daczarne.mx3s
 ```
 
+In VS Code, the `Build and restart` task runs both.
+
 ## Opening a page in DevTools
 
 A page that hits its policy shows nothing wrong on the panel, apart from missing or unstyled controls. The reason only shows in the page's console, in DevTools.

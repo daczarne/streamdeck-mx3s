@@ -66,7 +66,7 @@ Every dependency is pinned, and every upgrade is a deliberate change of its own.
 - No remote code runs inside Stream Deck. A library the settings pages load is vendored into the plugin folder, with its hash recorded, rather than loaded from a CDN.
 - GitHub Actions are pinned to full commit SHAs, with the version as a trailing comment, checked against the release tag. Like npm packages, they're upgraded by hand.
 - CI's runners are pinned to an Ubuntu release (`ubuntu-24.04`), not `ubuntu-latest`, which GitHub moves to a new release on its own schedule, with the tools its image comes with, such as the Chrome the browser tests drive. A release's image still gets GitHub's updates, but a new release can drop tools and change the default versions of others. Moving to a newer release is an upgrade of its own.
-- The Markdown lint and CSpell that `/lint` runs come from the machine, not the lockfile, so they're kept at the versions CI's Actions bundle, or local checks and CI's can disagree.
+- The Markdown lint and CSpell that `/lint` and the `Lint` task run come from the machine, not the lockfile, so they're kept at the versions CI's Actions bundle, or local checks and CI's can disagree.
 - The `dependencies-check` skill (`.claude/skills/dependencies-check/`) checks every dependency against these rules and proposes the upgrades to make, changing nothing.
 
 ## Unused code
