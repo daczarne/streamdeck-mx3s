@@ -53,10 +53,10 @@ Every function, class, method and constructor declared at the top of a file, in 
 A doc comment says what the declaration does or why it exists, and follows the rules for comments above: it doesn't repeat what the code states.
 
 - In TypeScript, the signature gives the types. `@param` and `@returns` appear only where a name doesn't explain itself, and never with a type.
-- In JavaScript (the `.mjs` scripts and `ui/*.js`), every parameter has a `@param` and every function a `@returns`, with its type, unless a `@type` gives the whole function a named function type.
+- In JavaScript (the `.mjs` scripts and `ui/*.js`), every parameter has a `@param` and every function but a constructor or a setter a `@returns`, with its type, unless a `@type` gives the whole function a named function type.
 - A doc comment goes above a class's decorator, not between the decorator and the class: TypeScript only attaches it there.
 
-`npm run check:docs` checks, over the TypeScript and JavaScript files Biome covers, that each of these declarations has a doc comment where TypeScript attaches it; in JavaScript, that it has a typed `@param` for every parameter and a typed `@returns`, except on a constructor or a setter, or a `@type` that types the whole function; and in TypeScript, that its `@param` and `@returns` give no type. What a doc comment says is left to review.
+`npm run check:docs` checks, over the TypeScript and JavaScript files Biome covers, that each of these declarations has a doc comment where TypeScript attaches it, and that its tags follow the rules above. What a doc comment says is left to review.
 
 ### Spelling
 
